@@ -1,7 +1,7 @@
 {
-  "name": "claude-plugins",
+  "name": "nebular-plugins",
   "owner": {
-    "name": "YOUR_NAME"
+    "name": "nebular-lab"
   },
   "plugins": [
     {
