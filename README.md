@@ -1,1 +1,1 @@
-# claude-plugins
+# nebular-plugins
