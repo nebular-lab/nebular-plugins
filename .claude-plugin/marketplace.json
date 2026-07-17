@@ -1,0 +1,13 @@
+{
+  "name": "claude-plugins",
+  "owner": {
+    "name": "YOUR_NAME"
+  },
+  "plugins": [
+    {
+      "name": "e2e-testing",
+      "source": "./plugins/e2e-testing",
+      "description": "自然言語シナリオ + AI(Playwright MCP) で E2E テストを行う skill 集。画面一覧の作成・シナリオ作成・デプロイ環境での実行を画面単位で回す。"
+    }
+  ]
+}
