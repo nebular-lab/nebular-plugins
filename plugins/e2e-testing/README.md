@@ -30,10 +30,8 @@ e2e/
   screens.md            # list-e2e-screens
   research/<screen>.md  # write-e2e-scenario
   scenarios/<screen>.md # write-e2e-scenario → run-e2e-scenario が読む
-  results/              # run-e2e-scenario（スクショ含む・コミット非推奨）
+  results/              # run-e2e-scenario（スクショ含む）
 ```
-
-利用先の `.gitignore` に `e2e/results/` を足すと結果ログを除外できる。
 
 ## 認証が要る画面
 
