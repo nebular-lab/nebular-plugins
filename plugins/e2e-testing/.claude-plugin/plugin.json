@@ -1,8 +1,0 @@
-{
-  "name": "e2e-testing",
-  "description": "自然言語シナリオを AI が Playwright MCP でデプロイ環境に対して実行する E2E テスト。画面一覧の作成→画面ごとのシナリオ作成→実行を、画面単位で回す 3 つの skill と Playwright MCP を同梱。",
-  "version": "0.1.1",
-  "author": {
-    "name": "nebular-lab"
-  }
-}
