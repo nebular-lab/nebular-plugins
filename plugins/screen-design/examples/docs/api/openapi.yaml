@@ -1,0 +1,294 @@
+openapi: 3.1.0
+info:
+  title: イベント管理 API（サンプル）
+  version: 1.0.0
+  description: 画面設計書のサンプル用の API 定義。
+servers:
+  - url: https://api.example.com/v1
+security:
+  - bearerAuth: []
+
+paths:
+  /me:
+    get:
+      operationId: getMe
+      summary: ログイン中のユーザーを取得する
+      tags: [users]
+      responses:
+        "200":
+          description: 取得できた
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /categories:
+    get:
+      operationId: listCategories
+      summary: イベントのカテゴリ一覧を取得する
+      tags: [events]
+      responses:
+        "200":
+          description: 取得できた
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Category" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /events:
+    get:
+      operationId: listEvents
+      summary: イベントを検索する
+      tags: [events]
+      parameters:
+        - name: keyword
+          in: query
+          description: タイトルと概要の部分一致
+          schema: { type: string, maxLength: 50 }
+        - name: status
+          in: query
+          description: 省略時はすべて。draft は admin と organizer のみ指定できる
+          schema: { $ref: "#/components/schemas/EventStatus" }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: perPage
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: 検索できた。開催日の昇順
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page, perPage]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/EventSummary" }
+                  total: { type: integer, description: 条件に合う全件数 }
+                  page: { type: integer }
+                  perPage: { type: integer }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      operationId: createEvent
+      summary: イベントを作成する
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventInput" }
+      responses:
+        "201":
+          description: 作成できた
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /events/{eventId}:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getEvent
+      summary: イベントを取得する
+      tags: [events]
+      responses:
+        "200":
+          description: 取得できた
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateEvent
+      summary: イベントを更新する
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/EventInput"
+                - type: object
+                  required: [version]
+                  properties:
+                    version:
+                      type: integer
+                      description: 取得時の version。食い違うと 409
+                    notifyParticipants:
+                      type: boolean
+                      default: false
+                      description: true なら参加者に変更をメールで通知する
+      responses:
+        "200":
+          description: 更新できた
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      operationId: deleteEvent
+      summary: イベントを削除する
+      tags: [events]
+      responses:
+        "204": { description: 削除できた }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    User:
+      type: object
+      required: [id, name, role]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role:
+          type: string
+          enum: [admin, organizer, member]
+
+    Category:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+
+    EventStatus:
+      type: string
+      enum: [draft, published, closed]
+
+    EventFormat:
+      type: string
+      enum: [onsite, online]
+
+    EventTag:
+      type: string
+      enum: [beginner, hands-on, networking, free, english]
+
+    EventSummary:
+      type: object
+      required: [id, title, status, startDate, format, participantCount, capacity, organizerId]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        status: { $ref: "#/components/schemas/EventStatus" }
+        startDate: { type: string, format: date }
+        format: { $ref: "#/components/schemas/EventFormat" }
+        venueName: { type: string, description: format が onsite のとき }
+        onlineUrl: { type: string, format: uri, description: format が online のとき }
+        participantCount: { type: integer }
+        capacity: { type: integer }
+        organizerId: { type: string }
+
+    EventInput:
+      type: object
+      required: [title, categoryId, format, startDate, capacity, status]
+      properties:
+        title: { type: string, minLength: 2, maxLength: 50 }
+        summary: { type: string, maxLength: 200 }
+        categoryId: { type: string }
+        format: { $ref: "#/components/schemas/EventFormat" }
+        venueName: { type: string, maxLength: 100, description: format が onsite のとき必須 }
+        onlineUrl: { type: string, format: uri, description: format が online のとき必須 }
+        startDate: { type: string, format: date }
+        capacity: { type: integer, minimum: 1, maximum: 999 }
+        tags:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/EventTag" }
+        status: { $ref: "#/components/schemas/EventStatus" }
+
+    Event:
+      allOf:
+        - $ref: "#/components/schemas/EventInput"
+        - type: object
+          required: [id, organizerId, organizerName, participantCount, version, updatedAt]
+          properties:
+            id: { type: string }
+            organizerId: { type: string }
+            organizerName: { type: string }
+            participantCount: { type: integer }
+            version: { type: integer }
+            updatedAt: { type: string, format: date-time }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+
+    ValidationError:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string, description: EventInput のプロパティ名 }
+              message: { type: string }
+
+  responses:
+    BadRequest:
+      description: パラメータが不正
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: ログインしていない
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: 権限がない
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: 見つからない
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: 競合した（更新は version の不一致、削除は参加者がいる）
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationFailed:
+      description: 入力値が不正
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationError" }
