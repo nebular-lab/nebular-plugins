@@ -1,0 +1,13 @@
+{
+  "name": "nebular-plugins-dev",
+  "private": true,
+  "description": "プラグインに含まれる TypeScript のサンプル・雛形を型チェックするための開発用設定（プラグイン本体には含まれない）",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
