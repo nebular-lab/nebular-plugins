@@ -42,7 +42,7 @@ allowed-tools:
    - リポジトリの中に、画面一覧（`README.md`）と `SCR-NNN_*.md` / `SCR-NNN_*.html` が置かれた場所がすでにあれば、そこを使う。
    - どこにもなければ、`docs/screens/` を作ってよいかをユーザーに 1 度だけ確認する。別の場所を指定されたらそこを使う。
    - 以下、決まった場所を「保存先」と呼ぶ。
-2. 保存先の `README.md`（画面一覧）を読み、既存の画面 ID と slug を確認する。なければ [screens-readme.md](assets/screens-readme.md) をもとに作る（例の行は消す）。
+2. 保存先の `README.md`（画面一覧）を読み、既存の画面 ID と slug を確認する。なければ [screens-readme.md](assets/screens-readme.md) をもとに作る（例の行は消し、「入力の共通ルール」の節は残す。中身は `/write-screen-spec` で確認する）。
 3. 保存先に `wireframe.css` がなければ [assets/wireframe.css](assets/wireframe.css) をコピーする。すでにあれば触らない。
 4. 同じ画面のワイヤーフレームや設計書（`.md`）があれば読む。
 5. 新規なら次の連番で ID を振る（`SCR-001` から 3 桁ゼロ埋め）。廃止した画面の ID も含め、一度使った ID は再利用しない。slug は英小文字とハイフン。
