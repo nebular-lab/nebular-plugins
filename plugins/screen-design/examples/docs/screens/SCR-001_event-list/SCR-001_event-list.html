@@ -8,38 +8,38 @@
 <body>
 
   <section class="screen" data-title="通常（organizer でログイン）">
-    <header class="row between" data-no="1">
-      <strong data-no="2">イベント管理</strong>
-      <span class="row"><span class="icon" data-no="3">人</span><span data-no="4">山田 花子</span></span>
+    <header class="row between">
+      <span class="row"><span class="icon">≡</span><strong>イベント管理</strong><span>イベント一覧</span></span>
+      <span class="row"><span class="icon">人</span><span>山田 花子</span></span>
     </header>
 
     <div class="row between">
-      <h1 data-no="5">イベント一覧</h1>
-      <button class="primary" data-no="6">イベントを作成</button>
+      <h1 data-no="1">イベント一覧</h1>
+      <button class="primary" data-no="2">イベントを作成</button>
     </div>
 
-    <p class="error" data-no="7">検索条件が正しくありません。条件を変えて検索してください</p>
+    <p class="error" data-no="3">検索条件が正しくありません。条件を変えて検索してください</p>
 
     <div class="row">
-      <div class="field grow"><label data-no="8">キーワード</label><div data-no="9"><input type="search" placeholder="タイトル・概要で検索"></div><small class="error" data-no="10">キーワードは 50 文字以内で入力してください</small></div>
-      <button data-no="11">検索</button>
+      <div class="field grow"><label data-no="4">キーワード</label><div data-no="5"><input type="search" placeholder="タイトル・概要で検索"></div><small class="error" data-no="6">キーワードは 50 文字以内で入力してください</small></div>
+      <button data-no="7">検索</button>
     </div>
 
-    <div class="tabs" data-no="12">
-      <span class="active" data-no="13">すべて</span>
-      <span data-no="14">公開中</span>
-      <span data-no="15">下書き</span>
-      <span data-no="16">終了</span>
+    <div class="tabs" data-no="8">
+      <span class="active" data-no="9">すべて</span>
+      <span data-no="10">公開中</span>
+      <span data-no="11">下書き</span>
+      <span data-no="12">終了</span>
     </div>
 
-    <table data-no="17">
-      <tr><th data-no="18">タイトル</th><th data-no="19">ステータス</th><th data-no="20">開催日</th><th data-no="21">参加者</th><th data-no="22">会場</th></tr>
+    <table data-no="13">
+      <tr><th data-no="14">タイトル</th><th data-no="15">ステータス</th><th data-no="16">開催日</th><th data-no="17">参加者</th><th data-no="18">会場</th></tr>
       <tr>
-        <td><a data-no="23">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
-        <td data-no="24">公開中</td>
-        <td data-no="25">2026/10/12</td>
-        <td data-no="26">18 / 30 人</td>
-        <td><a data-no="27">オンライン会場</a></td>
+        <td><a data-no="19">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
+        <td data-no="20">公開中</td>
+        <td data-no="21">2026/10/12</td>
+        <td data-no="22">18 / 30 人</td>
+        <td><a data-no="23">オンライン会場</a></td>
       </tr>
       <tr>
         <td>エンジニア交流会 秋</td>
@@ -53,32 +53,32 @@
       </tr>
     </table>
 
-    <div class="row between" data-no="28">
-      <button data-no="29">前へ</button>
-      <span data-no="30">1 / 3 ページ（全 52 件）</span>
-      <button data-no="31">次へ</button>
+    <div class="row between" data-no="24">
+      <button data-no="25">前へ</button>
+      <span data-no="26">1 / 3 ページ（全 52 件）</span>
+      <button data-no="27">次へ</button>
     </div>
 
     <div class="spacer"></div>
 
-    <footer class="row between" data-no="32">
-      <small data-no="33">© Example Inc.</small>
-      <a data-no="34"><span class="icon">？</span></a>
+    <footer class="row between" data-no="28">
+      <small data-no="29">© Example Inc.</small>
+      <a data-no="30"><span class="icon">？</span></a>
     </footer>
   </section>
 
   <section class="screen" data-title="読み込み中">
     <header class="row between">
-      <strong>イベント管理</strong>
+      <span class="row"><span class="icon">≡</span><strong>イベント管理</strong><span>イベント一覧</span></span>
       <span class="row"><span class="icon">人</span><span>山田 花子</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <div class="note" data-no="35">読み込み中（一覧の位置にスピナーを表示）</div>
+    <div class="note" data-no="31">読み込み中（一覧の位置にスピナーを表示）</div>
   </section>
 
   <section class="screen" data-title="データなし">
     <header class="row between">
-      <strong>イベント管理</strong>
+      <span class="row"><span class="icon">≡</span><strong>イベント管理</strong><span>イベント一覧</span></span>
       <span class="row"><span class="icon">人</span><span>山田 花子</span></span>
     </header>
     <div class="row between">
@@ -90,17 +90,17 @@
       <button>検索</button>
     </div>
     <div class="tabs"><span class="active">すべて</span><span>公開中</span><span>下書き</span><span>終了</span></div>
-    <p class="note" data-no="36">条件に合うイベントはありません</p>
+    <p class="note" data-no="32">条件に合うイベントはありません</p>
   </section>
 
   <section class="screen" data-title="エラー">
     <header class="row between">
-      <strong>イベント管理</strong>
+      <span class="row"><span class="icon">≡</span><strong>イベント管理</strong><span>イベント一覧</span></span>
       <span class="row"><span class="icon">人</span><span>佐藤 一郎</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <p class="error" data-no="37">イベントを読み込めませんでした。</p>
-    <div class="row"><button data-no="38">再読み込み</button></div>
+    <p class="error" data-no="33">イベントを読み込めませんでした。</p>
+    <div class="row"><button data-no="34">再読み込み</button></div>
   </section>
 
 </body>

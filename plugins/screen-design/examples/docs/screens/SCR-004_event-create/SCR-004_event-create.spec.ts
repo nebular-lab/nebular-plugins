@@ -119,25 +119,25 @@ const TAGS = ['初心者向け', 'ハンズオン', '交流', '無料', '英語'
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
-    header: page.getByText('イベント管理', { exact: true }), // No.1
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
-    heading: page.getByRole('heading', { name: 'イベントを作成', exact: true }), // No.6
-    title: page.getByLabel(/^タイトル/), // No.9（見出しは No.8）
-    summary: page.getByLabel(/^概要/), // No.12（見出しは No.11）
-    category: page.getByLabel(/^カテゴリ/), // No.15（見出しは No.14）
-    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.18
-    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.18
-    venue: page.getByLabel(/^会場名/), // No.22（見出しは No.21）
-    onlineUrl: page.getByLabel(/^配信 URL/), // No.25（見出しは No.24）
-    startDate: page.getByLabel(/^開催日/), // No.28（見出しは No.27）
-    capacity: page.getByLabel(/^定員/), // No.31（見出しは No.30）
-    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.34
-    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.41
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.42
-    dialog, // No.43（離脱の確認）
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.45
-    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.46
-    // エラー表示（No.7、7、10、13、18、21、24、27、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる
+    header: page.getByText('イベント管理', { exact: true }), // 共通ヘッダー（HDR-001）のサービス名
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.1
+    heading: page.getByRole('heading', { name: 'イベントを作成', exact: true }), // No.2
+    title: page.getByLabel(/^タイトル/), // No.5（見出しは No.4）
+    summary: page.getByLabel(/^概要/), // No.8（見出しは No.7）
+    category: page.getByLabel(/^カテゴリ/), // No.11（見出しは No.10）
+    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.14
+    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.14
+    venue: page.getByLabel(/^会場名/), // No.18（見出しは No.17）
+    onlineUrl: page.getByLabel(/^配信 URL/), // No.21（見出しは No.20）
+    startDate: page.getByLabel(/^開催日/), // No.24（見出しは No.23）
+    capacity: page.getByLabel(/^定員/), // No.27（見出しは No.26）
+    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.30
+    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.37
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.38
+    dialog, // No.39（離脱の確認）
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.41
+    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.42
+    // エラー表示（No.3、7、10、13、18、21、24、27、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる
   };
 };
 type UI = ReturnType<typeof ui>;
@@ -979,18 +979,6 @@ test.describe('SCR-004 イベント作成', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
-    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
-      await open(page, api);
-      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
-    });
-
-    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
-      await open(page, api);
-      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
-    });
-
-    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
-
     test('[document.title] 開くと、ページのタイトルを「イベントを作成」にする', async ({ page, api }) => {
       await open(page, api);
       await expect(page).toHaveTitle('イベントを作成');

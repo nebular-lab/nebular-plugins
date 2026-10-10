@@ -146,34 +146,34 @@ const validationError = { errors: [{ field: 'title', message: 'このタイト�
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
-    header: page.getByText('イベント管理', { exact: true }), // No.1
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
-    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.6
-    /** ステータス（No.7）。文言で特定する */
+    header: page.getByText('イベント管理', { exact: true }), // 共通ヘッダー（HDR-001）のサービス名
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.1
+    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.2
+    /** ステータス（No.3）。文言で特定する */
     status: (label: string) => page.getByText(label, { exact: true }),
-    /** 主催者の見出し（No.8）。見出しとデータは別の部品 */
+    /** 主催者の見出し（No.4）。見出しとデータは別の部品 */
     organizerLabel: page.getByText('主催', { exact: true }),
-    /** 主催者（No.9）。文言で特定する */
+    /** 主催者（No.5）。文言で特定する */
     organizer: (name: string) => page.getByText(name, { exact: true }),
-    title: page.getByLabel(/^タイトル/), // No.12
-    summary: page.getByLabel(/^概要/), // No.15
-    category: page.getByLabel(/^カテゴリ/), // No.18
-    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.21
-    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.21
-    venue: page.getByLabel(/^会場名/), // No.25
-    onlineUrl: page.getByLabel(/^配信 URL/), // No.28
-    startDate: page.getByLabel(/^開催日/), // No.31
-    capacity: page.getByLabel(/^定員/), // No.34
-    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.37
-    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.44
-    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.45
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.46（下書き）
-    update: page.getByRole('button', { name: '更新する', exact: true }), // No.46（公開中・終了）
-    del: page.getByRole('button', { name: '削除', exact: true }), // No.47
-    dialog, // No.48（削除の確認）、No.53（離脱の確認）。同時には 1 つしか表示されない
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.51、No.55
-    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.52
-    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.56
+    title: page.getByLabel(/^タイトル/), // No.8
+    summary: page.getByLabel(/^概要/), // No.11
+    category: page.getByLabel(/^カテゴリ/), // No.14
+    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.17
+    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.17
+    venue: page.getByLabel(/^会場名/), // No.21
+    onlineUrl: page.getByLabel(/^配信 URL/), // No.24
+    startDate: page.getByLabel(/^開催日/), // No.27
+    capacity: page.getByLabel(/^定員/), // No.30
+    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.33
+    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.40
+    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.41
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.42（下書き）
+    update: page.getByRole('button', { name: '更新する', exact: true }), // No.42（公開中・終了）
+    del: page.getByRole('button', { name: '削除', exact: true }), // No.43
+    dialog, // No.44（削除の確認）、No.49（離脱の確認）。同時には 1 つしか表示されない
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.47、No.51
+    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.48
+    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.52
   };
 };
 
@@ -1244,18 +1244,6 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
-    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
-      await openEdit(page, api, draftEvent);
-      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
-    });
-
-    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
-      await openEdit(page, api, draftEvent);
-      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
-    });
-
-    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
-
     test('[document.title] 開くと、ページのタイトルを「イベントを編集」にする', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(page).toHaveTitle('イベントを編集');
@@ -1395,7 +1383,7 @@ test.describe('SCR-002 イベント編集', () => {
     for (const c of placeholderCases) {
       test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent);
-        if ('online' in c) await ui(page).online.check(); // No.28 は「オンライン」のときだけ表示される
+        if ('online' in c) await ui(page).online.check(); // No.24 は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
     }

@@ -119,37 +119,37 @@ const LIST_PATH = '/events';
 // ---- 部品（番号はワイヤーフレームの data-no） -------------------------------
 
 const ui = (page: Page) => {
-  const table = page.getByRole('table'); // No.17
-  /** 表の 1 行。タイトルのリンク（No.23）の文言で特定する。データのセルは No.24〜21 */
+  const table = page.getByRole('table'); // No.13
+  /** 表の 1 行。タイトルのリンク（No.19）の文言で特定する。データのセルは No.20〜21 */
   const row = (title: string) => table.getByRole('row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
   return {
-    /** ユーザー名（No.4）。文言で特定する */
+    /** 共通ヘッダー（HDR-001）のユーザー名。GET /me が成功したことの目印に使う */
     userName: (name: string) => page.getByText(name, { exact: true }),
-    heading: page.getByRole('heading', { name: 'イベント一覧', exact: true }), // No.5
-    create: page.getByRole('button', { name: 'イベントを作成', exact: true }), // No.6
-    keyword: page.getByLabel(/^キーワード/), // No.9（見出しは No.8）
-    search: page.getByRole('button', { name: '検索', exact: true }), // No.11
+    heading: page.getByRole('heading', { name: 'イベント一覧', exact: true }), // No.1
+    create: page.getByRole('button', { name: 'イベントを作成', exact: true }), // No.2
+    keyword: page.getByLabel(/^キーワード/), // No.5（見出しは No.4）
+    search: page.getByRole('button', { name: '検索', exact: true }), // No.7
     /**
-     * ステータスのタブ（No.12）。タグが「実装時に決める」なので文言で特定する。
-     * 「公開中」「下書き」「終了」は表のステータス（No.24）にも出るので、表より前にあるタブを first() で選ぶ
+     * ステータスのタブ（No.8）。タグが「実装時に決める」なので文言で特定する。
+     * 「公開中」「下書き」「終了」は表のステータス（No.20）にも出るので、表より前にあるタブを first() で選ぶ
      */
     tab: (name: string) => page.getByText(name, { exact: true }).first(),
     table,
-    columnHeader: (name: string) => table.getByRole('columnheader', { name, exact: true }), // No.18〜16
+    columnHeader: (name: string) => table.getByRole('columnheader', { name, exact: true }), // No.14〜16
     rows: table.getByRole('row'),
     row,
-    titleLink: (title: string) => page.getByRole('link', { name: title, exact: true }), // No.23
+    titleLink: (title: string) => page.getByRole('link', { name: title, exact: true }), // No.19
     /** 読み上げ名は「{title} のオンライン会場」。画面に見える文言は「オンライン会場」 */
-    onlineLink: (title: string) => row(title).getByRole('link', { name: `${title} のオンライン会場`, exact: true }), // No.27
-    prev: page.getByRole('button', { name: '前へ', exact: true }), // No.29（ページ送りは No.28）
-    pageInfo: (text: string) => page.getByText(text, { exact: true }), // No.30
-    next: page.getByRole('button', { name: '次へ', exact: true }), // No.31
+    onlineLink: (title: string) => row(title).getByRole('link', { name: `${title} のオンライン会場`, exact: true }), // No.23
+    prev: page.getByRole('button', { name: '前へ', exact: true }), // No.25（ページ送りは No.24）
+    pageInfo: (text: string) => page.getByText(text, { exact: true }), // No.26
+    next: page.getByRole('button', { name: '次へ', exact: true }), // No.27
     /** 文言のない「？」のアイコンだけのリンク。読み上げ名「ヘルプ」で特定する */
-    help: page.getByRole('link', { name: 'ヘルプ', exact: true }), // No.34
-    noData: page.getByText('条件に合うイベントはありません'), // No.36
-    reload: page.getByRole('button', { name: '再読み込み', exact: true }), // No.38
-    // エラー表示（No.7、8、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる。
-    // 読み込み中の表示（No.35）はスピナーで、目印になる文言がない
+    help: page.getByRole('link', { name: 'ヘルプ', exact: true }), // No.30
+    noData: page.getByText('条件に合うイベントはありません'), // No.32
+    reload: page.getByRole('button', { name: '再読み込み', exact: true }), // No.34
+    // エラー表示（No.3、8、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる。
+    // 読み込み中の表示（No.31）はスピナーで、目印になる文言がない
   };
 };
 
@@ -270,11 +270,6 @@ test.use({ timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 720 } });
 
 test.describe('SCR-001 イベント一覧', () => {
   test.describe('API: 初期表示', () => {
-    test('[初期表示 / GET /me 200] name をユーザー名に表示する', async ({ page, api }) => {
-      await open(page, api, { user: users.organizer });
-      await expect(ui(page).userName(users.organizer.name)).toBeVisible();
-    });
-
     // GET /me の 200 で保持した role を表示条件の判定に使うことは、[「イベントを作成」ボタン 表示条件]、[ステータスのタブ 表示条件] で確かめている
     const meOutcomes: Outcome[] = [
       { status: 401, body: apiError('unauthorized'), label: 'ログイン画面（redirect は現在の URL）へ遷移する', leaves: true, query: LOGIN_FROM_QUERY, also: '閲覧権限 未ログイン', expect: toLogin(LOGIN_FROM_QUERY) },
@@ -1204,17 +1199,6 @@ test.describe('SCR-001 イベント一覧', () => {
     });
 
     // ---- テキスト ----
-    test('[ユーザー名 省略表記 境目] name が 10 文字ちょうどなら省略しない', async ({ page, api }) => {
-      const name = 'あ'.repeat(10);
-      await open(page, api, { user: { ...users.organizer, name } });
-      await expect(ui(page).userName(name)).toBeVisible();
-    });
-
-    test('[ユーザー名 省略表記] name が 11 文字なら、先頭 10 文字のあとに…を付ける', async ({ page, api }) => {
-      await open(page, api, { user: { ...users.organizer, name: 'あ'.repeat(11) } });
-      await expect(ui(page).userName(`${'あ'.repeat(10)}…`)).toBeVisible();
-    });
-
     const columnCases = [
       { item: 'タイトルの見出し', label: 'タイトル' },
       { item: 'ステータスの見出し', label: 'ステータス' },

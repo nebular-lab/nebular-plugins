@@ -116,19 +116,19 @@ const apiError = (code: string) => ({ code, message: code });
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
-    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.7
-    /** 主催者の見出し（No.9） */
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.1
+    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.3
+    /** 主催者の見出し（No.5） */
     organizerLabel: page.getByText('主催', { exact: true }),
-    /** 主催者（No.10）。文言で特定する */
+    /** 主催者（No.6）。文言で特定する */
     organizer: (name: string) => page.getByText(name, { exact: true }),
-    /** 表の 1 行。見出しのセル（No.12、11、13、15、17、19）の文言で特定する。データのセルは No.13、12、14、16、18、20 */
+    /** 表の 1 行。見出しのセル（No.8、11、13、15、17、19）の文言で特定する。データのセルは No.9、12、14、16、18、20 */
     row: (label: string) => page.getByRole('row').filter({ hasText: new RegExp(`^\\s*${label}`) }),
-    edit: page.getByRole('button', { name: '編集', exact: true }), // No.24
-    del: page.getByRole('button', { name: '削除', exact: true }), // No.25
-    dialog, // No.27
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.30
-    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.31
+    edit: page.getByRole('button', { name: '編集', exact: true }), // No.20
+    del: page.getByRole('button', { name: '削除', exact: true }), // No.21
+    dialog, // No.23
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.26
+    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.27
   };
 };
 
@@ -361,18 +361,6 @@ test.describe('SCR-003 イベント詳細', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
-    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
-      await open(page, api, draftEvent);
-      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
-    });
-
-    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
-      await open(page, api, draftEvent);
-      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
-    });
-
-    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
-
     test('[document.title] 開くと、ページのタイトルを「イベント詳細」にする', async ({ page, api }) => {
       await open(page, api, draftEvent);
       await expect(page).toHaveTitle('イベント詳細');
