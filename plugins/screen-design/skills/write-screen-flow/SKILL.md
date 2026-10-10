@@ -12,7 +12,7 @@ disable-model-invocation: true
 以下の相対パスは、この SKILL.md があるディレクトリを起点にする。
 
 - 描き方の決まり: [references/flow-rules.md](references/flow-rules.md)
-- サンプル: [../../examples/docs/screens/screen-flow.drawio](../../examples/docs/screens/screen-flow.drawio)（同じ場所の設計書から作ったもの。形・スタイル・ID・配置は、これに合わせる）
+- サンプル: [../../examples/docs/screens/screen-flow.drawio](../../examples/docs/screens/screen-flow.drawio)（同じ場所の、画面ごとのフォルダの設計書から作ったもの。形・スタイル・ID・配置は、これに合わせる）
 
 ## 手順
 

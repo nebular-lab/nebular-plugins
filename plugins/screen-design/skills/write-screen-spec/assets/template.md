@@ -8,6 +8,7 @@
 | 画面名 | |
 | URL | |
 | document.title | |
+| 共通ヘッダー | |
 | 初期フォーカス | |
 | Enter キーで動くボタン | |
 | ワイヤーフレーム | [SCR-NNN_slug.html](SCR-NNN_slug.html) |
