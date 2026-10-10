@@ -146,6 +146,7 @@ const validationError = { errors: [{ field: 'title', message: 'このタイト�
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
+    header: page.getByText('イベント管理', { exact: true }), // No.1
     back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
     heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.3
     /** ステータス（No.4）。文言で特定する */
@@ -232,6 +233,37 @@ async function scrollDownAndClick(page: Page, button: ReturnType<Page['getByRole
   await button.click();
 }
 
+/**
+ * 初期表示の API が定義にないステータスを返したときの画面を確かめる。
+ * ヘッダー・「← 一覧へ戻る」・見出し・画面上部のエラーだけを表示し、入力項目とボタン（ステータス・主催者も）は表示しない
+ */
+const showsOnlyTopError = async (page: Page) => {
+  const u = ui(page);
+  await expect(page.getByText(M.MSG022)).toBeVisible();
+  await expect(u.header).toBeVisible();
+  await expect(u.back).toBeVisible();
+  await expect(u.heading('イベントを編集')).toBeVisible();
+  const hidden = [
+    u.organizerLabel,
+    u.title, u.summary, u.category, u.onsite, u.online, u.venue, u.onlineUrl, u.startDate, u.capacity,
+    u.tag('初心者向け'), u.tag('ハンズオン'), u.tag('交流'), u.tag('無料'), u.tag('英語'),
+    u.notify, u.draft, u.publish, u.update, u.del,
+  ];
+  for (const part of hidden) await expect(part).toBeHidden();
+};
+/**
+ * ブラウザ標準の離脱確認（beforeunload のダイアログ）が出たかどうかを記録する。
+ * 出たときは受け入れて先へ進め、あとの shown の検証で落とす（待ち続けて時間切れにならないようにするため）
+ */
+function watchLeaveConfirm(page: Page) {
+  const state = { shown: false };
+  page.on('dialog', async (d) => {
+    if (d.type() === 'beforeunload') state.shown = true;
+    await d.accept();
+  });
+  return state;
+}
+
 /** レスポンスの表の 1 行 */
 type Outcome = {
   status: number;
@@ -269,7 +301,7 @@ test.describe('SCR-002 イベント編集', () => {
   test.describe('API: 初期表示', () => {
     const meOutcomes: Outcome[] = [
       { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin(editPath(draftEvent)) },
-      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of meOutcomes) {
       test(`[初期表示 / GET /me ${statusLabel(o)}${also(o)}] GET /me で ${returns(o)}、${o.label}`, async ({ page, api }) => {
@@ -278,11 +310,8 @@ test.describe('SCR-002 イベント編集', () => {
         if (o.leaves) api.allowUnmockedCalls();
         await page.goto(editPath(draftEvent));
         await o.expect(page);
-        if (o.other) {
-          // 「終了する」ので、後続の GET /categories は呼ばず、フォームも表示しない
-          expect(categories.requests).toHaveLength(0);
-          await expect(ui(page).title).toBeHidden();
-        }
+        // 「終了する」ので、後続の GET /categories は呼ばない
+        if (o.other) expect(categories.requests).toHaveLength(0);
       });
     }
 
@@ -298,7 +327,7 @@ test.describe('SCR-002 イベント編集', () => {
 
     const categoriesOutcomes: Outcome[] = [
       { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(draftEvent)) },
-      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of categoriesOutcomes) {
       test(`[初期表示 / GET /categories ${statusLabel(o)}] GET /categories で ${returns(o)}、${o.label}`, async ({ page, api }) => {
@@ -307,11 +336,8 @@ test.describe('SCR-002 イベント編集', () => {
         if (o.leaves) api.allowUnmockedCalls();
         await page.goto(editPath(draftEvent));
         await o.expect(page);
-        if (o.other) {
-          // 「終了する」ので、後続の GET /events/{eventId} は呼ばず、フォームも表示しない
-          expect(event.requests).toHaveLength(0);
-          await expect(ui(page).title).toBeHidden();
-        }
+        // 「終了する」ので、後続の GET /events/{eventId} は呼ばない
+        if (o.other) expect(event.requests).toHaveLength(0);
       });
     }
 
@@ -373,7 +399,7 @@ test.describe('SCR-002 イベント編集', () => {
           await toList(page);
         },
       },
-      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示しない`, expect: showsOnlyTopError },
     ];
     for (const o of eventOutcomes) {
       test(`[初期表示 / GET /events/{eventId} ${statusLabel(o)}${also(o)}] GET /events/{eventId} で ${returns(o)}、${o.label}`, async ({ page, api }) => {
@@ -382,8 +408,6 @@ test.describe('SCR-002 イベント編集', () => {
         if (o.leaves) api.allowUnmockedCalls();
         await page.goto(editPath(publishedEvent));
         await o.expect(page);
-        // スピナーを消すだけで、フォームは表示しない
-        if (o.other) await expect(ui(page).title).toBeHidden();
       });
     }
 
@@ -1588,7 +1612,8 @@ test.describe('SCR-002 イベント編集', () => {
   test.describe('遷移', () => {
     /**
      * タイトルを変えて「下書き保存」を押し、保存に成功するまで待つ。
-     * 保存した内容が「入力内容に変更があるかどうか」の基準になるので、このあとは、保存した値と同じなら「変更なし」
+     * 保存に成功したときの入力欄の値が「入力内容に変更があるかどうか」の基準になるので、このあとは、
+     * 保存した値と同じなら「変更なし」、初期表示のときの値に戻しても「変更あり」
      */
     async function changeAndSaveDraft(page: Page, api: ApiMock) {
       const title = '保存したタイトル';
@@ -1640,6 +1665,15 @@ test.describe('SCR-002 イベント編集', () => {
       await staysOn(page, draftEvent);
     });
 
+    test(`[「← 一覧へ戻る」リンク押下 / 入力内容に変更があるとき / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 別の値で下書き保存に成功したあと、初期表示のときの値へ戻すと、遷移せずに離脱の確認に ${q(M.MSG012)}を表示する`, async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
+      await ui(page).title.fill(draftEvent.title); // 基準は保存したときの値に変わっているので、初期表示のときの値は「変更あり」
+      await ui(page).back.click();
+      await expect(ui(page).dialog.getByText(M.MSG012)).toBeVisible();
+      await staysOn(page, draftEvent);
+    });
+
     test('[離脱の確認で「キャンセル」ボタン押下] 「キャンセル」を押すと、離脱の確認を閉じて画面に残り、入力内容を保つ', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await ui(page).title.fill('変更したタイトル');
@@ -1657,6 +1691,17 @@ test.describe('SCR-002 イベント編集', () => {
       api.allowUnmockedCalls();
       await ui(page).dialogLeave.click();
       await toList(page);
+    });
+
+    test('[離脱の確認で「離れる」ボタン押下 / ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認] 入力内容に変更があっても、「離れる」を押したときは、ブラウザ標準の離脱確認を出さずにイベント一覧へ遷移する', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await ui(page).title.fill('変更したタイトル');
+      await ui(page).back.click(); // この操作が、ブラウザに離脱確認を出させるための「ユーザーの操作」を兼ねる
+      const leaveConfirm = watchLeaveConfirm(page);
+      api.allowUnmockedCalls();
+      await ui(page).dialogLeave.click();
+      await toList(page);
+      expect(leaveConfirm.shown).toBe(false);
     });
 
     test('[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認] 入力内容に変更があれば、タブを閉じるときにブラウザ標準の離脱確認を出す', async ({ page, api }) => {
@@ -1709,6 +1754,74 @@ test.describe('SCR-002 イベント編集', () => {
       expect(d.type()).toBe('beforeunload');
       await d.dismiss();
     });
+
+    test('[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認 / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 別の値で下書き保存に成功したあと、初期表示のときの値へ戻すと、タブを閉じるときにブラウザ標準の離脱確認を出す', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
+      await ui(page).title.fill(draftEvent.title); // 基準は保存したときの値に変わっているので、初期表示のときの値は「変更あり」
+      const dialog = page.waitForEvent('dialog');
+      await page.close({ runBeforeUnload: true });
+      const d = await dialog;
+      expect(d.type()).toBe('beforeunload');
+      await d.dismiss();
+    });
+
+    // アクションの処理による遷移。タイトルを変えたまま（変更あり）で操作し、ブラウザ標準の離脱確認が出ずに遷移することを確かめる。
+    // ボタンを押す操作が、ブラウザに離脱確認を出させるための「ユーザーの操作」を兼ねる。
+    // 遷移の種類ごとに代表の 1 つで確かめる（同じ遷移は、どのボタン・どの API でも同じ扱い）
+    const actionLeaveCases: { source: string; operation: string; when: string; to: string; reply: { status: number; body?: unknown }; act: (u: ReturnType<typeof ui>) => Promise<void>; arrives: (page: Page) => Promise<void> }[] = [
+      {
+        source: '「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} 200',
+        operation: 'PUT /events/{eventId}',
+        when: '公開に成功したとき',
+        to: 'イベント一覧',
+        reply: { status: 200, body: { ...draftEvent, status: 'published' } },
+        act: (u) => u.publish.click(),
+        arrives: toList,
+      },
+      {
+        source: '削除の確認で「削除する」ボタン押下 / DELETE /events/{eventId} 204',
+        operation: 'DELETE /events/{eventId}',
+        when: '削除に成功したとき',
+        to: 'イベント一覧',
+        reply: { status: 204 },
+        act: async (u) => {
+          await u.del.click();
+          await u.dialogDelete.click();
+        },
+        arrives: toList,
+      },
+      {
+        source: '「下書き保存」ボタン押下 / PUT /events/{eventId} 401',
+        operation: 'PUT /events/{eventId}',
+        when: '下書き保存で 401 が返ったとき',
+        to: 'ログイン画面',
+        reply: { status: 401, body: apiError('unauthorized') },
+        act: (u) => u.draft.click(),
+        arrives: toLogin(editPath(draftEvent)),
+      },
+      {
+        source: '「下書き保存」ボタン押下 / PUT /events/{eventId} 404',
+        operation: 'PUT /events/{eventId}',
+        when: '下書き保存で 404 が返ったとき',
+        to: 'イベント一覧',
+        reply: { status: 404, body: apiError('not_found') },
+        act: (u) => u.draft.click(),
+        arrives: toList,
+      },
+    ];
+    for (const c of actionLeaveCases) {
+      test(`[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認 / ${c.source}] 入力内容に変更があっても、${c.when}は、ブラウザ標準の離脱確認を出さずに${c.to}へ遷移する`, async ({ page, api }) => {
+        await openEdit(page, api, draftEvent);
+        api.on(c.operation, c.reply);
+        await ui(page).title.fill('変更したタイトル');
+        const leaveConfirm = watchLeaveConfirm(page);
+        api.allowUnmockedCalls(); // 遷移先の画面の通信は確かめない
+        await c.act(ui(page));
+        await c.arrives(page);
+        expect(leaveConfirm.shown).toBe(false);
+      });
+    }
   });
 
   test.describe('権限', () => {

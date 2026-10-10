@@ -10,6 +10,7 @@
  *   [初期表示 / GET /events 400]                     … 5. 初期表示時の処理 の GET /events、レスポンス 400
  *   [「検索」ボタン押下 / GET /events リクエスト]    … アクション「「検索」ボタン押下」で呼ぶ GET /events のリクエスト
  *   [「検索」ボタン押下 / URL クエリの書き換え]      … アクション「「検索」ボタン押下」の手順（API を呼ばない）
+ *   [ブラウザの戻る・進むで、この画面の URL クエリが変わる / キーワード] … アクション「ブラウザの戻る・進むで、この画面の URL クエリが変わる」の手順
  *   [キーワード 50 文字以内]                         … バリデーションのチェック表の、キーワードの「50 文字以内」の行
  *   [クエリパラメータ status 省略]                   … 2. クエリパラメータ の status を省略したとき
  *   [Enter キーで動くボタン]                         … 冒頭の表の「Enter キーで動くボタン」
@@ -178,6 +179,15 @@ async function open(page: Page, api: ApiMock, opts: OpenOptions = {}) {
   return mocks;
 }
 
+/** GET /me が失敗して終了した状態で開く。failedMe は失敗させた GET /me、events は GET /events のモック */
+async function openMeFailed(page: Page, api: ApiMock, query: string = '') {
+  const { events } = mockInitial(api);
+  const failedMe = api.on('GET /me', { status: 500 });
+  await page.goto(urlOf(query));
+  await expect(page.getByText(M.MSG023)).toBeVisible();
+  return { events, failedMe };
+}
+
 /** 操作をしたあと、GET /events がもう 1 回呼ばれるのを待ち、そのリクエストの query を返す */
 async function nextQuery(op: MockedOperation, action: () => Promise<unknown>) {
   const before = op.requests.length;
@@ -189,6 +199,13 @@ async function nextQuery(op: MockedOperation, action: () => Promise<unknown>) {
 /** この画面のままで、URL のクエリが期待どおりであること（null は、そのパラメータがないこと） */
 const hasQuery = (expected: Record<string, string | null>) => (url: URL) =>
   url.pathname === LIST_PATH && Object.entries(expected).every(([key, value]) => url.searchParams.get(key) === value);
+
+/** この画面のままで、URL のクエリが文字列としてそのままであること */
+const hasSearch = (search: string) => (url: URL) => url.pathname === LIST_PATH && url.search === search;
+
+/** キーワードのバリデーションに違反する値（51 文字）と、そのメッセージ。キーワードのエラー表示を出しておくのに使う */
+const TOO_LONG_KEYWORD = 'あ'.repeat(51);
+const KEYWORD_ERROR = M.MSG004('キーワード', 50);
 
 /** 401 のケースで開く URL のクエリ。redirect が固定の /events ではなく、現在の URL であることを確かめるために付ける */
 const LOGIN_FROM_QUERY = '?keyword=Go&status=closed&page=2';
@@ -281,10 +298,32 @@ test.describe('SCR-001 イベント一覧', () => {
       const u = ui(page);
       await expect(u.keyword).toBeVisible(); // 見出しで特定しているので、キーワードの見出しの確かめも兼ねる
       await expect(u.search).toBeVisible();
-      // 「下書き」のタブは role で出し分けるが、GET /me が失敗していて role がわからないので確かめない
       for (const name of ['すべて', '公開中', '終了']) await expect(u.tab(name)).toBeVisible();
     });
 
+    test('[初期表示 / GET /me 上記以外（「下書き」のタブ）] GET /me で定義にないステータスが返って終了したとき、ステータスのタブに「下書き」を表示しない', async ({ page, api }) => {
+      mockInitial(api);
+      api.on('GET /me', { status: 500 });
+      await page.goto(urlOf('?status=draft'));
+      await expect(page.getByText(M.MSG023)).toBeVisible();
+      const u = ui(page);
+      await expect(u.tab('すべて')).toBeVisible();
+      await expect(u.tab('下書き')).toBeHidden(); // 一覧を表示していないので、「下書き」の文言はタブにしか出ない
+    });
+
+    test.fixme('[初期表示 / GET /me 上記以外（タブの選択）] GET /me で定義にないステータスが返って終了したとき、URL クエリに status が付いていても「すべて」のタブを選んだ状態にする（選択状態の目印が設計書にないため。特定の属性を前提にせずには確かめられない）', async () => {});
+
+    // URL クエリ keyword をキーワードに入れるのは GET /me より前なので、GET /me が失敗して終了しても入っている
+    test('[初期表示 / GET /me 上記以外（キーワードの値）] GET /me で定義にないステータスが返って終了しても、キーワードには URL クエリ keyword の値（前後の空白は除く）が入っている', async ({ page, api }) => {
+      mockInitial(api);
+      api.on('GET /me', { status: 500 });
+      await page.goto(urlOf(`?keyword=${encodeURIComponent('  Go  ')}`));
+      await expect(page.getByText(M.MSG023)).toBeVisible();
+      await expect(ui(page).keyword).toHaveValue('Go');
+    });
+
+    // GET /events の keyword・status・page は、整えたあとの URL クエリの値をそのまま使う。
+    // 受け取れない値・前後の空白を除いた値で呼ぶことは、[クエリパラメータ …] のケースで確かめている
     test('[初期表示 / GET /events リクエスト] keyword・status・page を付けて開くと、query に URL クエリの keyword・status・page と、perPage 20 を入れる', async ({ page, api }) => {
       const { events } = await open(page, api, { query: '?keyword=Go&status=closed&page=2' });
       expect(Object.fromEntries(events.requests[0].query)).toEqual({ keyword: 'Go', status: 'closed', page: '2', perPage: '20' });
@@ -293,11 +332,6 @@ test.describe('SCR-001 イベント一覧', () => {
     test('[初期表示 / GET /events リクエスト（クエリパラメータなし）] 何も付けずに開くと、keyword と status は送らず、page は 1、perPage は 20 を入れる', async ({ page, api }) => {
       const { events } = await open(page, api);
       expect(Object.fromEntries(events.requests[0].query)).toEqual({ page: '1', perPage: '20' });
-    });
-
-    test('[初期表示 / GET /events リクエスト（keyword の前後の空白）] URL クエリ keyword の前後の空白を除いて keyword に入れる', async ({ page, api }) => {
-      const { events } = await open(page, api, { query: `?keyword=${encodeURIComponent('  Go  ')}` });
-      expect(events.requests[0].query.get('keyword')).toBe('Go');
     });
 
     test('[初期表示 / GET /events 200（items が 1 件以上） / イベントの表 表示条件] items が 1 件以上なら、items[] をイベントの表に入れて表示する', async ({ page, api }) => {
@@ -384,6 +418,27 @@ test.describe('SCR-001 イベント一覧', () => {
       expect(query).toEqual({ status: 'published', page: '1', perPage: '20' });
     });
 
+    test('[「検索」ボタン押下 / GET /me が失敗していたとき] 初期表示時の処理を GET /me からやり直し、入力したキーワードと page 1 で GET /events を呼ぶ', async ({ page, api }) => {
+      const { events } = await openMeFailed(page, api, '?status=closed&page=3');
+      const me = api.on('GET /me', { status: 200, body: users.organizer });
+      const u = ui(page);
+      await u.keyword.fill('Go');
+      const query = await nextQuery(events, () => u.search.click());
+      expect(query).toEqual({ keyword: 'Go', status: 'closed', page: '1', perPage: '20' });
+      expect(me.requests).toHaveLength(1);
+      await expect(u.userName(users.organizer.name)).toBeVisible();
+      await expect(u.table).toBeVisible();
+    });
+
+    test('[「検索」ボタン押下 / GET /me が成功していたとき] GET /me は呼び直さずに GET /events を呼ぶ', async ({ page, api }) => {
+      const { me, events } = await open(page, api);
+      const u = ui(page);
+      await u.keyword.fill('Go');
+      await nextQuery(events, () => u.search.click());
+      await expect(u.search).toBeEnabled(); // 検索が終わるまで待つ
+      expect(me.requests).toHaveLength(1);
+    });
+
     test('[「検索」ボタン押下 / 検索中] 検索中は「検索」ボタンを非活性にし、応答のあと非活性を解除する', async ({ page, api }) => {
       await open(page, api);
       const reply = deferred<MockReply>();
@@ -443,6 +498,25 @@ test.describe('SCR-001 イベント一覧', () => {
       const query = await nextQuery(events, () => u.tab('公開中').click());
       expect(query).toEqual({ status: 'published', page: '1', perPage: '20' });
     });
+
+    test('[タブの切り替え / GET /me が失敗していたとき] 初期表示時の処理を GET /me からやり直し、選んだタブの status と page 1 で GET /events を呼ぶ', async ({ page, api }) => {
+      const { events } = await openMeFailed(page, api, '?keyword=Go&page=3');
+      const me = api.on('GET /me', { status: 200, body: users.organizer });
+      const u = ui(page);
+      const query = await nextQuery(events, () => u.tab('公開中').click()); // 一覧を表示していないので、「公開中」の文言はタブにしか出ない
+      expect(query).toEqual({ keyword: 'Go', status: 'published', page: '1', perPage: '20' });
+      expect(me.requests).toHaveLength(1);
+      await expect(u.userName(users.organizer.name)).toBeVisible();
+      await expect(u.table).toBeVisible();
+    });
+
+    test('[タブの切り替え / GET /me が成功していたとき] GET /me は呼び直さずに GET /events を呼ぶ', async ({ page, api }) => {
+      const { me, events } = await open(page, api);
+      const u = ui(page);
+      await nextQuery(events, () => u.tab('終了').click());
+      await expect(u.pageInfo('1 / 3 ページ（全 52 件）')).toBeVisible();
+      expect(me.requests).toHaveLength(1);
+    });
   });
 
   for (const p of PAGERS) {
@@ -453,6 +527,14 @@ test.describe('SCR-001 イベント一覧', () => {
         const query = await nextQuery(events, () => ui(page)[p.key].click());
         expect(query).toEqual({ keyword: 'Go', status: 'published', page: String(p.to), perPage: '20' });
       });
+
+      if (p.key === 'next') {
+        test('[「次へ」ボタン押下 / GET /events リクエスト（URL クエリに page がないとき）] URL クエリに page がないときに「次へ」を押すと、page を 1 とみなして 1 増やした 2 を入れて呼ぶ', async ({ page, api }) => {
+          const { events } = await open(page, api);
+          const query = await nextQuery(events, () => ui(page).next.click());
+          expect(query).toEqual({ page: '2', perPage: '20' });
+        });
+      }
     });
   }
 
@@ -494,9 +576,104 @@ test.describe('SCR-001 イベント一覧', () => {
     });
   });
 
+  test.describe('API: ブラウザの戻る・進むで、この画面の URL クエリが変わる', () => {
+    // 初期表示の手順と同じく GET /events を呼ぶので、レスポンスのケースは繰り返さない。
+    // 変わったあとの URL クエリでタブを選び直すことは、送る status で確かめる（選択状態そのものは [初期表示 / タブの選択] を見る）
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / GET /events リクエスト（戻る）] 検索したあとブラウザの戻るで戻ると、戻ったあとの URL クエリの keyword・status・page で呼ぶ', async ({ page, api }) => {
+      const { events } = await open(page, api, { query: '?status=closed&page=2' });
+      const u = ui(page);
+      await u.keyword.fill('Go');
+      await nextQuery(events, () => u.search.click());
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go', status: 'closed', page: '1' }));
+      const query = await nextQuery(events, () => page.goBack());
+      expect(query).toEqual({ status: 'closed', page: '2', perPage: '20' });
+      await expect(u.pageInfo('2 / 3 ページ（全 52 件）')).toBeVisible();
+    });
+
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / GET /events リクエスト（進む）] タブを切り替えてブラウザの戻るで戻ったあと、ブラウザの進むで進むと、進んだあとの URL クエリの keyword・status・page で呼ぶ', async ({ page, api }) => {
+      const { events } = await open(page, api, { query: '?keyword=Go&page=2' });
+      const u = ui(page);
+      await nextQuery(events, () => u.tab('終了').click());
+      await nextQuery(events, () => page.goBack());
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go', status: null, page: '2' }));
+      const query = await nextQuery(events, () => page.goForward());
+      expect(query).toEqual({ keyword: 'Go', status: 'closed', page: '1', perPage: '20' });
+      await expect(u.pageInfo('1 / 3 ページ（全 52 件）')).toBeVisible();
+    });
+
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / GET /me が失敗していたとき] 初期表示時の処理を GET /me からやり直し、戻ったあとの URL クエリで GET /events を呼ぶ', async ({ page, api }) => {
+      // GET /me が失敗したままで検索して、履歴を 1 つ増やしておく（検索でも GET /me を呼び直して、また失敗する）
+      const { events, failedMe } = await openMeFailed(page, api, '?status=closed');
+      const u = ui(page);
+      await u.keyword.fill('Go');
+      await u.search.click();
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go', status: 'closed' }));
+      await expect.poll(() => failedMe.requests.length).toBe(2);
+      const me = api.on('GET /me', { status: 200, body: users.organizer });
+      const query = await nextQuery(events, () => page.goBack());
+      expect(query).toEqual({ status: 'closed', page: '1', perPage: '20' });
+      expect(me.requests).toHaveLength(1);
+      await expect(u.userName(users.organizer.name)).toBeVisible();
+      await expect(u.table).toBeVisible();
+    });
+
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / GET /me が成功していたとき] GET /me は呼び直さずに GET /events を呼ぶ', async ({ page, api }) => {
+      const { me, events } = await open(page, api, { query: '?page=2' });
+      const u = ui(page);
+      await nextQuery(events, () => u.next.click());
+      await nextQuery(events, () => page.goBack());
+      await expect(u.pageInfo('2 / 3 ページ（全 52 件）')).toBeVisible();
+      expect(me.requests).toHaveLength(1);
+    });
+  });
+
   test.describe('API を呼ばない手順', () => {
     // 初期表示の「URL クエリ keyword をキーワードに入れる」「URL クエリ status に対応するタブを選ぶ」は、
-    // [クエリパラメータ keyword]、[クエリパラメータ status] のケースで確かめている
+    // [クエリパラメータ keyword]、[クエリパラメータ status] のケースで確かめている。
+    // キーワードに入れるのが GET /me より前であることは、[初期表示 / GET /me 上記以外（キーワードの値）] で確かめている
+
+    // ---- 初期表示: URL クエリを整える ----
+    // 省略したときと同じに扱う値のパラメータだけを消し、ほかのパラメータは変えない。
+    // 受け取れない値の境目（どの値を受け取れないとみなすか）は、[クエリパラメータ status 受け取れない値]、[クエリパラメータ page 受け取れない値] で確かめている
+    const tidyCases = [
+      { cond: 'keyword が空', label: 'keyword を空にして開くと、URL クエリの keyword を消す', query: '?keyword=&status=closed&page=2', expected: { keyword: null, status: 'closed', page: '2' } },
+      { cond: 'keyword が空白だけ', label: 'keyword を空白だけにして開くと、URL クエリの keyword を消す', query: `?keyword=${encodeURIComponent('   ')}&status=closed&page=2`, expected: { keyword: null, status: 'closed', page: '2' } },
+      { cond: 'keyword の前後の空白', label: 'keyword の前後に空白を付けて開くと、URL クエリの keyword を、前後の空白を除いた値に書き換える', query: `?keyword=${encodeURIComponent('  Go  ')}&status=closed&page=2`, expected: { keyword: 'Go', status: 'closed', page: '2' } },
+      { cond: 'status が受け取れない値', label: 'status=archived を付けて開くと、URL クエリの status を消す', query: '?keyword=Go&status=archived&page=2', expected: { keyword: 'Go', status: null, page: '2' } },
+      { cond: 'page が受け取れない値', label: 'page=0 を付けて開くと、URL クエリの page を消す', query: '?keyword=Go&status=closed&page=0', expected: { keyword: 'Go', status: 'closed', page: null } },
+    ];
+    for (const c of tidyCases) {
+      test(`[初期表示 / URL クエリを整える（${c.cond}）] ${c.label}`, async ({ page, api }) => {
+        await open(page, api, { query: c.query });
+        await expect(page).toHaveURL(hasQuery(c.expected));
+      });
+    }
+
+    test('[初期表示 / URL クエリを整える（member で status が draft）] member が status=draft を付けて開くと、URL クエリの status を消す', async ({ page, api }) => {
+      await open(page, api, { user: users.member, list: publishedOnlyList, query: '?keyword=Go&status=draft&page=2' });
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go', status: null, page: '2' }));
+    });
+
+    test('[初期表示 / URL クエリを整える（organizer で status が draft）] organizer が status=draft を付けて開いても、URL クエリの status は消さない', async ({ page, api }) => {
+      await open(page, api, { user: users.organizer, query: '?keyword=Go&status=draft&page=2' });
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go', status: 'draft', page: '2' }));
+    });
+
+    test('[初期表示 / URL クエリを整える（変えるところがないとき）] 受け取れる値だけを付けて開くと、URL クエリを変えない', async ({ page, api }) => {
+      const query = '?keyword=Go&status=closed&page=2';
+      await open(page, api, { query });
+      await expect(page).toHaveURL(hasSearch(query));
+    });
+
+    test('[初期表示 / URL クエリを整える / ブラウザの履歴] ブラウザの履歴を置き換えるので、ブラウザの戻るで、整える前の URL クエリではなく、この画面を開く前に見ていた URL に戻る', async ({ page, api }) => {
+      // 先に別の URL（2 ページ目）を開いてから、整えられる URL クエリで開き直す
+      await open(page, api, { query: '?page=2' });
+      await open(page, api, { query: '?status=archived' });
+      await expect(page).toHaveURL(hasQuery({ status: null, page: null }));
+      await page.goBack();
+      await expect(page).toHaveURL(hasQuery({ status: null, page: '2' }));
+    });
+
     test.fixme('[初期表示 / タブの選択] URL クエリ status に対応するタブを選択状態にする（選択状態の目印が設計書にないため。特定の属性を前提にせずには確かめられない。送る status は [クエリパラメータ status] で確かめている）', async () => {});
 
     test('[「検索」ボタン押下 / URL クエリの書き換え] 「検索」を押すと、URL クエリの keyword をキーワードの入力値に、page を 1 に書き換える', async ({ page, api }) => {
@@ -583,6 +760,32 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(page).toHaveURL(hasQuery({ status: null, page: '3' }));
     });
 
+    test('[タブの切り替え / キーワードを戻す] キーワードを書き換えたまま「検索」を押さずにタブを切り替えると、入力途中の値を捨てて、キーワードを URL クエリ keyword の値に戻す', async ({ page, api }) => {
+      const { events } = await open(page, api, { query: '?keyword=Go' });
+      const u = ui(page);
+      await u.keyword.fill('Rust');
+      await nextQuery(events, () => u.tab('終了').click());
+      await expect(u.keyword).toHaveValue('Go');
+    });
+
+    test('[タブの切り替え / キーワードを戻す（URL クエリに keyword がないとき）] URL クエリに keyword がないとき、キーワードを入力したままタブを切り替えると、キーワードを空にする', async ({ page, api }) => {
+      const { events } = await open(page, api);
+      const u = ui(page);
+      await u.keyword.fill('Rust');
+      await nextQuery(events, () => u.tab('終了').click());
+      await expect(u.keyword).toHaveValue('');
+    });
+
+    test(`[タブの切り替え / キーワードのエラーの消去] ${q(KEYWORD_ERROR)}を表示したあとタブを切り替えると、キーワードのエラー表示を非表示にする`, async ({ page, api }) => {
+      const { events } = await open(page, api);
+      const u = ui(page);
+      await u.keyword.fill(TOO_LONG_KEYWORD);
+      await u.search.click();
+      await expect(page.getByText(KEYWORD_ERROR)).toBeVisible();
+      await nextQuery(events, () => u.tab('終了').click());
+      await expect(page.getByText(KEYWORD_ERROR)).toBeHidden();
+    });
+
     for (const p of PAGERS) {
       test(`[「${p.name}」ボタン押下 / URL クエリの書き換え] ${p.from} ページ目で「${p.name}」を押すと、URL クエリの page を ${p.change}（${p.to}）にする`, async ({ page, api }) => {
         await open(page, api, { query: `?page=${p.from}` });
@@ -598,6 +801,34 @@ test.describe('SCR-001 イベント一覧', () => {
         await expect(page).toHaveURL(hasQuery({ page: String(p.from) }));
       });
 
+      test(`[「${p.name}」ボタン押下 / キーワードを戻す] キーワードを書き換えたまま「検索」を押さずに「${p.name}」を押すと、入力途中の値を捨てて、キーワードを URL クエリ keyword の値に戻す`, async ({ page, api }) => {
+        const { events } = await open(page, api, { query: `?keyword=Go&page=${p.from}` });
+        const u = ui(page);
+        await u.keyword.fill('Rust');
+        const query = await nextQuery(events, () => u[p.key].click());
+        await expect(u.keyword).toHaveValue('Go');
+        expect(query.keyword).toBe('Go'); // 入力途中の値は検索にも使わない
+      });
+
+      test(`[「${p.name}」ボタン押下 / キーワードを戻す（URL クエリに keyword がないとき）] URL クエリに keyword がないとき、キーワードを入力したまま「${p.name}」を押すと、キーワードを空にする`, async ({ page, api }) => {
+        const { events } = await open(page, api, { query: `?page=${p.from}` });
+        const u = ui(page);
+        await u.keyword.fill('Rust');
+        const query = await nextQuery(events, () => u[p.key].click());
+        await expect(u.keyword).toHaveValue('');
+        expect(query.keyword).toBeUndefined();
+      });
+
+      test(`[「${p.name}」ボタン押下 / キーワードのエラーの消去] ${q(KEYWORD_ERROR)}を表示したあと「${p.name}」を押すと、キーワードのエラー表示を非表示にする`, async ({ page, api }) => {
+        const { events } = await open(page, api, { query: `?page=${p.from}` });
+        const u = ui(page);
+        await u.keyword.fill(TOO_LONG_KEYWORD);
+        await u.search.click();
+        await expect(page.getByText(KEYWORD_ERROR)).toBeVisible();
+        await nextQuery(events, () => u[p.key].click());
+        await expect(page.getByText(KEYWORD_ERROR)).toBeHidden();
+      });
+
       test(`[「${p.name}」ボタン押下 / スクロール] 「${p.name}」を押すと、画面の一番上までスクロールする`, async ({ page, api }) => {
         // 20 行の一覧にして、押す前に画面の下端までスクロールしておく
         await open(page, api, { list: fullPageList, query: `?page=${p.from}` });
@@ -608,6 +839,43 @@ test.describe('SCR-001 イベント一覧', () => {
         await expect(u.heading).toBeInViewport();
       });
     }
+
+    test('[「次へ」ボタン押下 / URL クエリの書き換え（URL クエリに page がないとき）] URL クエリに page がないときに「次へ」を押すと、page を 1 とみなして 1 増やし、URL クエリの page を 2 にする', async ({ page, api }) => {
+      await open(page, api);
+      await ui(page).next.click();
+      await expect(page).toHaveURL(hasQuery({ page: '2' }));
+    });
+
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / キーワード] 検索したあとブラウザの戻るで戻ると、キーワードを、戻ったあとの URL クエリ keyword の値にする', async ({ page, api }) => {
+      const { events } = await open(page, api, { query: '?keyword=Go' });
+      const u = ui(page);
+      await u.keyword.fill('Rust');
+      await nextQuery(events, () => u.search.click());
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Rust' }));
+      await nextQuery(events, () => page.goBack());
+      await expect(u.keyword).toHaveValue('Go');
+    });
+
+    test('[ブラウザの戻る・進むで、この画面の URL クエリが変わる / キーワード（URL クエリに keyword がないとき）] 検索したあとブラウザの戻るで、keyword のない URL クエリに戻ると、キーワードを空にする', async ({ page, api }) => {
+      const { events } = await open(page, api);
+      const u = ui(page);
+      await u.keyword.fill('Go');
+      await nextQuery(events, () => u.search.click());
+      await expect(page).toHaveURL(hasQuery({ keyword: 'Go' }));
+      await nextQuery(events, () => page.goBack());
+      await expect(u.keyword).toHaveValue('');
+    });
+
+    test(`[ブラウザの戻る・進むで、この画面の URL クエリが変わる / キーワードのエラーの消去] ${q(KEYWORD_ERROR)}を表示したあとブラウザの戻るで戻ると、キーワードのエラー表示を非表示にする`, async ({ page, api }) => {
+      const { events } = await open(page, api);
+      const u = ui(page);
+      await nextQuery(events, () => u.tab('終了').click()); // 戻る先の履歴を作っておく
+      await u.keyword.fill(TOO_LONG_KEYWORD);
+      await u.search.click();
+      await expect(page.getByText(KEYWORD_ERROR)).toBeVisible();
+      await nextQuery(events, () => page.goBack());
+      await expect(page.getByText(KEYWORD_ERROR)).toBeHidden();
+    });
   });
 
   test.describe('バリデーション・入力できる範囲', () => {
@@ -723,10 +991,18 @@ test.describe('SCR-001 イベント一覧', () => {
       expect(events.requests[0].query.has('status')).toBe(false);
     });
 
-    test('[クエリパラメータ status 受け取れない値] status=archived（published・draft・closed 以外）を付けて開くと、省略したときと同じく「すべて」のタブを選び、GET /events に status を送らない', async ({ page, api }) => {
-      const { events } = await open(page, api, { query: '?status=archived' });
-      expect(events.requests[0].query.has('status')).toBe(false);
-    });
+    // published・draft・closed と完全に一致しない値は受け取れない
+    const invalidStatusCases = [
+      { name: 'archived（published・draft・closed 以外）', value: 'archived' },
+      { name: 'Published（大文字と小文字が違う）', value: 'Published' },
+      { name: '空', value: '' },
+    ];
+    for (const c of invalidStatusCases) {
+      test(`[クエリパラメータ status 受け取れない値] status を${c.name}にして開くと、省略したときと同じく「すべて」のタブを選び、GET /events に status を送らない`, async ({ page, api }) => {
+        const { events } = await open(page, api, { query: `?status=${encodeURIComponent(c.value)}` });
+        expect(events.requests[0].query.has('status')).toBe(false);
+      });
+    }
 
     test('[クエリパラメータ status（member で draft）] member が status=draft を付けて開くと、省略したときと同じく「すべて」のタブを選び、GET /events に status を送らない', async ({ page, api }) => {
       const { events } = await open(page, api, { user: users.member, list: publishedOnlyList, query: '?status=draft' });
@@ -745,20 +1021,30 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(ui(page).pageInfo('1 / 3 ページ（全 52 件）')).toBeVisible();
     });
 
+    // 受け取れるのは、半角数字だけで先頭が 0 でないもの
     const invalidPageCases = [
       { name: '0', value: '0' },
       { name: '負の数（-1）', value: '-1' },
       { name: '小数（1.5）', value: '1.5' },
       { name: '数字でない値（abc）', value: 'abc' },
       { name: '空', value: '' },
+      { name: '先頭が 0 の値（02）', value: '02' },
+      { name: '符号の付いた値（+2）', value: '+2' },
+      { name: '指数の書き方の値（1e2）', value: '1e2' },
+      { name: '全角数字（２）', value: '２' },
     ];
     for (const c of invalidPageCases) {
       test(`[クエリパラメータ page 受け取れない値] page を${c.name}にして開くと、省略したときと同じく 1 ページ目を表示する（GET /events の page に 1 を送る）`, async ({ page, api }) => {
-        const { events } = await open(page, api, { query: `?page=${c.value}` });
+        const { events } = await open(page, api, { query: `?page=${encodeURIComponent(c.value)}` });
         expect(events.requests[0].query.get('page')).toBe('1');
         await expect(ui(page).pageInfo('1 / 3 ページ（全 52 件）')).toBeVisible();
       });
     }
+
+    test('[クエリパラメータ page 受け取れない値 境目] page=10（半角数字だけで、先頭が 0 でない）を付けて開くと、そのまま GET /events の page に 10 を送る', async ({ page, api }) => {
+      const { events } = await open(page, api, { list: outOfRangeList, query: '?page=10' }); // 全 52 件 = 3 ページ
+      expect(events.requests[0].query.get('page')).toBe('10');
+    });
 
     test('[クエリパラメータ page 総ページ数を超える値] 3 ページしかないときに page=99 を付けて開くと、そのまま GET /events の page に 99 を送る', async ({ page, api }) => {
       const { events } = await open(page, api, { list: outOfRangeList, query: '?page=99' }); // 全 52 件 = 3 ページ

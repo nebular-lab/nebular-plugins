@@ -119,6 +119,7 @@ const TAGS = ['初心者向け', 'ハンズオン', '交流', '無料', '英語'
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
+    header: page.getByText('イベント管理', { exact: true }), // No.1
     back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
     heading: page.getByRole('heading', { name: 'イベントを作成', exact: true }), // No.3
     title: page.getByLabel(/^タイトル/), // No.6（見出しは No.5）
@@ -206,6 +207,32 @@ async function scrollDownAndClick(page: Page, button: Locator) {
   await button.click();
 }
 
+/**
+ * 初期表示の API が定義にないステータスを返したときの画面を確かめる。
+ * ヘッダー・「← 一覧へ戻る」・見出し・画面上部のエラーだけを表示し、入力項目とボタンは表示しない
+ */
+const showsOnlyTopError = async (page: Page) => {
+  const u = ui(page);
+  await expect(page.getByText(M.MSG022)).toBeVisible();
+  await expect(u.header).toBeVisible();
+  await expect(u.back).toBeVisible();
+  await expect(u.heading).toBeVisible();
+  const hidden = [u.title, u.summary, u.category, u.onsite, u.online, u.venue, u.onlineUrl, u.startDate, u.capacity, ...TAGS.map(u.tag), u.draft, u.publish];
+  for (const part of hidden) await expect(part).toBeHidden();
+};
+/**
+ * ブラウザ標準の離脱確認（beforeunload のダイアログ）が出たかどうかを記録する。
+ * 出たときは受け入れて先へ進め、あとの shown の検証で落とす（待ち続けて時間切れにならないようにするため）
+ */
+function watchLeaveConfirm(page: Page) {
+  const state = { shown: false };
+  page.on('dialog', async (d) => {
+    if (d.type() === 'beforeunload') state.shown = true;
+    await d.accept();
+  });
+  return state;
+}
+
 /** レスポンスの表の 1 行 */
 type Outcome = {
   status: number;
@@ -245,7 +272,7 @@ test.describe('SCR-004 イベント作成', () => {
     // admin・organizer なら [権限 admin / 初期表示 / GET /me 200 / member でないとき] などで確かめている
     const meOutcomes: Outcome[] = [
       { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin },
-      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of meOutcomes) {
       test(`[初期表示 / GET /me ${statusLabel(o)}${also(o)}] GET /me で ${returns(o)}、${o.label}`, async ({ page, api }) => {
@@ -254,11 +281,8 @@ test.describe('SCR-004 イベント作成', () => {
         if (o.leaves) api.allowUnmockedCalls();
         await page.goto(CREATE_PATH);
         await o.expect(page);
-        if (o.other) {
-          // 「終了する」ので、後続の GET /categories は呼ばず、フォームも表示しない
-          expect(cat.requests).toHaveLength(0);
-          await expect(ui(page).title).toBeHidden();
-        }
+        // 「終了する」ので、後続の GET /categories は呼ばない
+        if (o.other) expect(cat.requests).toHaveLength(0);
       });
     }
 
@@ -269,7 +293,7 @@ test.describe('SCR-004 イベント作成', () => {
 
     const categoriesOutcomes: Outcome[] = [
       { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin },
-      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of categoriesOutcomes) {
       test(`[初期表示 / GET /categories ${statusLabel(o)}] GET /categories で ${returns(o)}、${o.label}`, async ({ page, api }) => {
@@ -278,8 +302,6 @@ test.describe('SCR-004 イベント作成', () => {
         if (o.leaves) api.allowUnmockedCalls();
         await page.goto(CREATE_PATH);
         await o.expect(page);
-        // 「終了する」ので、フォームは表示しない
-        if (o.other) await expect(ui(page).title).toBeHidden();
       });
     }
 
@@ -1204,6 +1226,17 @@ test.describe('SCR-004 イベント作成', () => {
       await toList(page);
     });
 
+    test('[離脱の確認で「離れる」ボタン押下 / ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認] 入力内容に変更があっても、「離れる」を押したときは、ブラウザ標準の離脱確認を出さずにイベント一覧へ遷移する', async ({ page, api }) => {
+      await open(page, api);
+      await ui(page).title.fill('変更したタイトル');
+      await ui(page).back.click(); // この操作が、ブラウザに離脱確認を出させるための「ユーザーの操作」を兼ねる
+      const leaveConfirm = watchLeaveConfirm(page);
+      api.allowUnmockedCalls();
+      await ui(page).dialogLeave.click();
+      await toList(page);
+      expect(leaveConfirm.shown).toBe(false);
+    });
+
     test('[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認] 入力内容に変更があれば、タブを閉じるときにブラウザ標準の離脱確認を出す', async ({ page, api }) => {
       await open(page, api);
       await ui(page).title.click(); // ブラウザは、ユーザーが操作していないページでは離脱確認を出さない
@@ -1228,6 +1261,48 @@ test.describe('SCR-004 イベント作成', () => {
       await closed;
       expect(shown).toBe(false);
     });
+
+    // アクションの処理による遷移。必須項目を入力したまま（変更あり）で操作し、ブラウザ標準の離脱確認が出ずに遷移することを確かめる。
+    // ボタンを押す操作が、ブラウザに離脱確認を出させるための「ユーザーの操作」を兼ねる。
+    // 遷移の種類ごとに代表の 1 つで確かめる（401 は、どちらのボタンでも同じ扱い）
+    const actionLeaveCases: { source: string; when: string; to: string; reply: MockReply; button: 'draft' | 'publish'; arrives: (page: Page) => Promise<void> }[] = [
+      {
+        source: '「下書き保存」ボタン押下 / POST /events 201',
+        when: '下書き保存に成功したとき',
+        to: 'イベント編集',
+        reply: { status: 201, body: createdEvent },
+        button: 'draft',
+        arrives: async (page) => expect(page).toHaveURL(new RegExp(`/events/${createdEvent.id}/edit$`)),
+      },
+      {
+        source: '「公開する」ボタン押下 / POST /events 201',
+        when: '公開に成功したとき',
+        to: 'イベント一覧',
+        reply: { status: 201, body: { ...createdEvent, status: 'published' } },
+        button: 'publish',
+        arrives: toList,
+      },
+      {
+        source: '「下書き保存」ボタン押下 / POST /events 401',
+        when: '下書き保存で 401 が返ったとき',
+        to: 'ログイン画面',
+        reply: { status: 401, body: apiError('unauthorized') },
+        button: 'draft',
+        arrives: toLogin,
+      },
+    ];
+    for (const c of actionLeaveCases) {
+      test(`[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認 / ${c.source}] 入力内容に変更があっても、${c.when}は、ブラウザ標準の離脱確認を出さずに${c.to}へ遷移する`, async ({ page, api }) => {
+        await open(page, api);
+        api.on('POST /events', c.reply);
+        await fillValid(page);
+        const leaveConfirm = watchLeaveConfirm(page);
+        api.allowUnmockedCalls(); // 遷移先の画面の通信は確かめない
+        await ui(page)[c.button].click();
+        await c.arrives(page);
+        expect(leaveConfirm.shown).toBe(false);
+      });
+    }
   });
 
   test.describe('権限', () => {
