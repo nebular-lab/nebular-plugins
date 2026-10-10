@@ -1,6 +1,6 @@
 # 画面設計の概要
 
-このディレクトリには、画面の設計書と、それに関わるファイルを置いている。
+このディレクトリには、画面の設計書と、それに関わるファイルを置いている。画面ごとのファイル（ワイヤーフレーム、設計書、Playwright テスト）は、画面 ID のフォルダの中にある。
 
 | ファイル | 内容 |
 | --- | --- |
@@ -12,4 +12,4 @@
 
 | 画面 ID | 画面名 | URL | ワイヤーフレーム | 設計書 | Playwright テスト |
 | --- | --- | --- | --- | --- | --- |
-| SCR-001 | ログイン | /login | [SCR-001_login.html](SCR-001_login.html) | [SCR-001_login.md](SCR-001_login.md) | - |
+| SCR-001 | ログイン | /login | [SCR-001_login.html](SCR-001_login/SCR-001_login.html) | [SCR-001_login.md](SCR-001_login/SCR-001_login.md) | - |

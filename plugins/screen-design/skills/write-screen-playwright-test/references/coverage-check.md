@@ -12,14 +12,14 @@
 ````text
 あなたはテスト設計のレビュアーです。次のファイルを読み、テストコードが、設計書からケースを洗い出せているかを確かめてください。ファイルは編集しないでください。
 
-- 画面設計書: {SCR-NNN_<slug>.md の絶対パス}
-- ワイヤーフレーム: {SCR-NNN_<slug>.html の絶対パス}
+- 画面設計書: {SCR-NNN_<slug>/SCR-NNN_<slug>.md の絶対パス}
+- ワイヤーフレーム: {SCR-NNN_<slug>/SCR-NNN_<slug>.html の絶対パス}
 - メッセージ一覧・共通ルール: {messages.md、common-rules.md の絶対パス}
 - OpenAPI 定義: {パス。なければ「なし」}
-- テストコード: {SCR-NNN_<slug>.spec.ts の絶対パス}
+- テストコード: {SCR-NNN_<slug>/SCR-NNN_<slug>.spec.ts の絶対パス}
 - テストケースの作り方: {write-screen-playwright-test/references/test-case-rules.md の絶対パス}
 - 画面設計書の記述規則: {write-screen-spec/references/writing-rules.md の絶対パス}
-- 手本のテストコード: {examples/playwright-test/screens/ の絶対パス}
+- 手本のテストコード: {examples/docs/screens/ の絶対パス}（画面ごとのフォルダの中の .spec.ts）
 
 最初に 2 つの規則を全部読み、手本を 1 つ読んでください。次に、テストコードを見る前に、設計書を上から読んで、作るはずのケースを自分で一覧にしてください。そのうえで、テストコードと 1 つずつ突き合わせます（ループで生成しているテストは、配列を展開して数える）。
 

@@ -1,8 +1,8 @@
 /**
  * SCR-004 イベント作成 の Playwright テスト
  *
- * 設計書: docs/screens/SCR-004_event-create.md
- * ワイヤーフレーム: docs/screens/SCR-004_event-create.html
+ * 設計書: docs/screens/SCR-004_event-create/SCR-004_event-create.md
+ * ワイヤーフレーム: docs/screens/SCR-004_event-create/SCR-004_event-create.html
  * メッセージ一覧: docs/screens/messages.md
  * 共通ルール: docs/screens/common-rules.md
  *
@@ -26,7 +26,7 @@
  * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「入力可能最大文字数」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
  */
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, deferred, type ApiMock, type MockReply } from '../support/api-mock';
+import { test, expect, deferred, type ApiMock, type MockReply } from '../api-mock';
 
 // ---- メッセージ（docs/screens/messages.md）------------------------------------
 // 変数（{v1}、{v2}…）のあるメッセージは関数にする。引数は変数の番号の順
@@ -120,24 +120,24 @@ const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
     header: page.getByText('イベント管理', { exact: true }), // No.1
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
-    heading: page.getByRole('heading', { name: 'イベントを作成', exact: true }), // No.3
-    title: page.getByLabel(/^タイトル/), // No.6（見出しは No.5）
-    summary: page.getByLabel(/^概要/), // No.9（見出しは No.8）
-    category: page.getByLabel(/^カテゴリ/), // No.12（見出しは No.11）
-    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.15
-    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.15
-    venue: page.getByLabel(/^会場名/), // No.17（見出しは No.16）
-    onlineUrl: page.getByLabel(/^配信 URL/), // No.20（見出しは No.19）
-    startDate: page.getByLabel(/^開催日/), // No.23（見出しは No.22）
-    capacity: page.getByLabel(/^定員/), // No.26（見出しは No.25）
-    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.29
-    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.31
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.32
-    dialog, // No.33（離脱の確認）
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.34
-    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.35
-    // エラー表示（No.4、7、10、13、18、21、24、27、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
+    heading: page.getByRole('heading', { name: 'イベントを作成', exact: true }), // No.6
+    title: page.getByLabel(/^タイトル/), // No.9（見出しは No.8）
+    summary: page.getByLabel(/^概要/), // No.12（見出しは No.11）
+    category: page.getByLabel(/^カテゴリ/), // No.15（見出しは No.14）
+    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.18
+    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.18
+    venue: page.getByLabel(/^会場名/), // No.22（見出しは No.21）
+    onlineUrl: page.getByLabel(/^配信 URL/), // No.25（見出しは No.24）
+    startDate: page.getByLabel(/^開催日/), // No.28（見出しは No.27）
+    capacity: page.getByLabel(/^定員/), // No.31（見出しは No.30）
+    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.34
+    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.41
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.42
+    dialog, // No.43（離脱の確認）
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.45
+    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.46
+    // エラー表示（No.7、7、10、13、18、21、24、27、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる
   };
 };
 type UI = ReturnType<typeof ui>;
@@ -979,6 +979,18 @@ test.describe('SCR-004 イベント作成', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
+    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
+      await open(page, api);
+      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
+    });
+
+    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
+      await open(page, api);
+      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
+    });
+
+    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
+
     test('[document.title] 開くと、ページのタイトルを「イベントを作成」にする', async ({ page, api }) => {
       await open(page, api);
       await expect(page).toHaveTitle('イベントを作成');
@@ -1303,6 +1315,23 @@ test.describe('SCR-004 イベント作成', () => {
         expect(leaveConfirm.shown).toBe(false);
       });
     }
+  });
+
+  test.describe('共通ルール（遷移）', () => {
+    test('[共通ルール ブラウザの戻るで画面に戻ったときに、入力内容を復元するか] 入力したまま一覧へ離れ、ブラウザの戻るで戻ると、入力内容は捨てて、初期表示の状態で表示する', async ({ page, api }) => {
+      await open(page, api);
+      const u = ui(page);
+      await u.title.fill('入力途中のタイトル');
+      await u.back.click();
+      api.allowUnmockedCalls(); // 遷移先の一覧画面の通信は確かめない
+      await u.dialogLeave.click();
+      await expect(page).toHaveURL(/\/events$/);
+      mockInitial(api); // 戻ったときに、初期表示時の処理をやり直す
+      await page.goBack();
+      await expect(page).toHaveURL(/\/events\/new$/);
+      await expect(u.title).toBeVisible();
+      await expect(u.title).toHaveValue('');
+    });
   });
 
   test.describe('権限', () => {

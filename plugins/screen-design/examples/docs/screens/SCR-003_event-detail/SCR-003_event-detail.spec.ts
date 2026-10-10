@@ -1,8 +1,8 @@
 /**
  * SCR-003 イベント詳細 の Playwright テスト
  *
- * 設計書: docs/screens/SCR-003_event-detail.md
- * ワイヤーフレーム: docs/screens/SCR-003_event-detail.html
+ * 設計書: docs/screens/SCR-003_event-detail/SCR-003_event-detail.md
+ * ワイヤーフレーム: docs/screens/SCR-003_event-detail/SCR-003_event-detail.html
  * メッセージ一覧: docs/screens/messages.md
  * 共通ルール: docs/screens/common-rules.md
  *
@@ -22,7 +22,7 @@
  * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・フォーカスの位置・キー操作の結果で確かめる
  */
 import type { Page } from '@playwright/test';
-import { test, expect, deferred, type ApiMock } from '../support/api-mock';
+import { test, expect, deferred, type ApiMock } from '../api-mock';
 
 // ---- メッセージ（docs/screens/messages.md）------------------------------------
 // 変数（{v1}、{v2}…）のあるメッセージは関数にする。引数は変数の番号の順
@@ -116,19 +116,19 @@ const apiError = (code: string) => ({ code, message: code });
 const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
-    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.4
-    /** 主催者の見出し（No.6） */
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
+    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.7
+    /** 主催者の見出し（No.9） */
     organizerLabel: page.getByText('主催', { exact: true }),
-    /** 主催者（No.7）。文言で特定する */
+    /** 主催者（No.10）。文言で特定する */
     organizer: (name: string) => page.getByText(name, { exact: true }),
-    /** 表の 1 行。見出しのセル（No.9、11、13、15、17、19）の文言で特定する。データのセルは No.10、12、14、16、18、20 */
+    /** 表の 1 行。見出しのセル（No.12、11、13、15、17、19）の文言で特定する。データのセルは No.13、12、14、16、18、20 */
     row: (label: string) => page.getByRole('row').filter({ hasText: new RegExp(`^\\s*${label}`) }),
-    edit: page.getByRole('button', { name: '編集', exact: true }), // No.21
-    del: page.getByRole('button', { name: '削除', exact: true }), // No.22
-    dialog, // No.24
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.25
-    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.26
+    edit: page.getByRole('button', { name: '編集', exact: true }), // No.24
+    del: page.getByRole('button', { name: '削除', exact: true }), // No.25
+    dialog, // No.27
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.30
+    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.31
   };
 };
 
@@ -361,6 +361,18 @@ test.describe('SCR-003 イベント詳細', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
+    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
+      await open(page, api, draftEvent);
+      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
+    });
+
+    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
+      await open(page, api, draftEvent);
+      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
+    });
+
+    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
+
     test('[document.title] 開くと、ページのタイトルを「イベント詳細」にする', async ({ page, api }) => {
       await open(page, api, draftEvent);
       await expect(page).toHaveTitle('イベント詳細');

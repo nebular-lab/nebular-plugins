@@ -3,43 +3,43 @@
 <head>
   <meta charset="utf-8">
   <title>SCR-001 イベント一覧</title>
-  <link rel="stylesheet" href="wireframe.css">
+  <link rel="stylesheet" href="../wireframe.css">
 </head>
 <body>
 
   <section class="screen" data-title="通常（organizer でログイン）">
     <header class="row between" data-no="1">
-      <strong>イベント管理</strong>
-      <span class="row"><span class="icon">人</span><span data-no="2">山田 花子</span></span>
+      <strong data-no="2">イベント管理</strong>
+      <span class="row"><span class="icon" data-no="3">人</span><span data-no="4">山田 花子</span></span>
     </header>
 
     <div class="row between">
-      <h1 data-no="3">イベント一覧</h1>
-      <button class="primary" data-no="4">イベントを作成</button>
+      <h1 data-no="5">イベント一覧</h1>
+      <button class="primary" data-no="6">イベントを作成</button>
     </div>
 
-    <p class="error" data-no="5">検索条件が正しくありません。条件を変えて検索してください</p>
+    <p class="error" data-no="7">検索条件が正しくありません。条件を変えて検索してください</p>
 
     <div class="row">
-      <div class="field grow"><label data-no="6">キーワード</label><div data-no="7"><input type="search" placeholder="タイトル・概要で検索"></div><small class="error" data-no="8">キーワードは 50 文字以内で入力してください</small></div>
-      <button data-no="9">検索</button>
+      <div class="field grow"><label data-no="8">キーワード</label><div data-no="9"><input type="search" placeholder="タイトル・概要で検索"></div><small class="error" data-no="10">キーワードは 50 文字以内で入力してください</small></div>
+      <button data-no="11">検索</button>
     </div>
 
-    <div class="tabs" data-no="10">
-      <span class="active">すべて</span>
-      <span>公開中</span>
-      <span>下書き</span>
-      <span>終了</span>
+    <div class="tabs" data-no="12">
+      <span class="active" data-no="13">すべて</span>
+      <span data-no="14">公開中</span>
+      <span data-no="15">下書き</span>
+      <span data-no="16">終了</span>
     </div>
 
-    <table data-no="11">
-      <tr><th data-no="12">タイトル</th><th data-no="13">ステータス</th><th data-no="14">開催日</th><th data-no="15">参加者</th><th data-no="16">会場</th></tr>
+    <table data-no="17">
+      <tr><th data-no="18">タイトル</th><th data-no="19">ステータス</th><th data-no="20">開催日</th><th data-no="21">参加者</th><th data-no="22">会場</th></tr>
       <tr>
-        <td><a data-no="17">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
-        <td data-no="18">公開中</td>
-        <td data-no="19">2026/10/12</td>
-        <td data-no="20">18 / 30 人</td>
-        <td><a data-no="21">オンライン会場</a></td>
+        <td><a data-no="23">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
+        <td data-no="24">公開中</td>
+        <td data-no="25">2026/10/12</td>
+        <td data-no="26">18 / 30 人</td>
+        <td><a data-no="27">オンライン会場</a></td>
       </tr>
       <tr>
         <td>エンジニア交流会 秋</td>
@@ -53,17 +53,17 @@
       </tr>
     </table>
 
-    <div class="row between" data-no="22">
-      <button data-no="23">前へ</button>
-      <span data-no="24">1 / 3 ページ（全 52 件）</span>
-      <button data-no="25">次へ</button>
+    <div class="row between" data-no="28">
+      <button data-no="29">前へ</button>
+      <span data-no="30">1 / 3 ページ（全 52 件）</span>
+      <button data-no="31">次へ</button>
     </div>
 
     <div class="spacer"></div>
 
-    <footer class="row between" data-no="26">
-      <small>© Example Inc.</small>
-      <a data-no="27">ヘルプ</a>
+    <footer class="row between" data-no="32">
+      <small data-no="33">© Example Inc.</small>
+      <a data-no="34"><span class="icon">？</span></a>
     </footer>
   </section>
 
@@ -73,7 +73,7 @@
       <span class="row"><span class="icon">人</span><span>山田 花子</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <div class="note" data-no="28">読み込み中（一覧の位置にスピナーを表示）</div>
+    <div class="note" data-no="35">読み込み中（一覧の位置にスピナーを表示）</div>
   </section>
 
   <section class="screen" data-title="データなし">
@@ -90,7 +90,7 @@
       <button>検索</button>
     </div>
     <div class="tabs"><span class="active">すべて</span><span>公開中</span><span>下書き</span><span>終了</span></div>
-    <p class="note" data-no="29">条件に合うイベントはありません</p>
+    <p class="note" data-no="36">条件に合うイベントはありません</p>
   </section>
 
   <section class="screen" data-title="エラー">
@@ -99,8 +99,8 @@
       <span class="row"><span class="icon">人</span><span>佐藤 一郎</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <p class="error" data-no="30">イベントを読み込めませんでした。</p>
-    <div class="row"><button data-no="31">再読み込み</button></div>
+    <p class="error" data-no="37">イベントを読み込めませんでした。</p>
+    <div class="row"><button data-no="38">再読み込み</button></div>
   </section>
 
 </body>

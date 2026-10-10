@@ -15,7 +15,7 @@
 あなたは画面設計書のレビュアーです。次のファイルを読み、食い違いと規則違反を探してください。ファイルは編集しないでください。
 
 - 対象の画面: {画面 ID}
-- 置き場所: {例: docs/screens/}（画面設計書、ワイヤーフレーム、overview.md、messages.md、common-rules.md がある）
+- 置き場所: {例: docs/screens/}（overview.md、messages.md、common-rules.md と、画面ごとのフォルダがある。フォルダの中に、画面設計書とワイヤーフレームがある）
 - OpenAPI 定義: {パス。なければ「なし」}
 - 記述規則: {write-screen-spec/references/writing-rules.md の絶対パス}
 - ワイヤーフレームの規則: {write-screen-wireframe/references/wireframe-rules.md の絶対パス}

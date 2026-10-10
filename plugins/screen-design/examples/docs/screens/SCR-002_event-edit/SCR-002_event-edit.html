@@ -3,67 +3,69 @@
 <head>
   <meta charset="utf-8">
   <title>SCR-002 イベント編集</title>
-  <link rel="stylesheet" href="wireframe.css">
+  <link rel="stylesheet" href="../wireframe.css">
 </head>
 <body>
 
   <section class="screen" data-title="通常（公開済みを編集）">
     <header class="row between" data-no="1">
-      <span class="icon">≡</span>
-      <strong>イベント管理</strong>
-      <span class="icon">人</span>
+      <span class="icon" data-no="2">≡</span>
+      <strong data-no="3">イベント管理</strong>
+      <span class="icon" data-no="4">人</span>
     </header>
 
-    <a data-no="2">← 一覧へ戻る</a>
+    <a data-no="5">← 一覧へ戻る</a>
 
     <div class="row between">
-      <h1 data-no="3">イベントを編集</h1>
-      <span class="box" data-no="4">公開中</span>
+      <h1 data-no="6">イベントを編集</h1>
+      <span class="box" data-no="7">公開中</span>
     </div>
 
-    <div class="row"><small data-no="5">主催</small><small data-no="6">山田 花子</small></div>
+    <div class="row"><small data-no="8">主催</small><small data-no="9">山田 花子</small></div>
 
-    <p class="error" data-no="7">通信に失敗しました。時間をおいてもう一度お試しください</p>
+    <p class="error" data-no="10">通信に失敗しました。時間をおいてもう一度お試しください</p>
 
-    <div class="field"><label data-no="8">タイトル（必須）</label><div data-no="9"><input type="text" value="はじめての TypeScript ハンズオン" placeholder="例: はじめての TypeScript ハンズオン"></div><small class="error" data-no="10">タイトルを入力してください</small></div>
+    <div class="field"><label data-no="11">タイトル（必須）</label><div data-no="12"><input type="text" value="はじめての TypeScript ハンズオン" placeholder="例: はじめての TypeScript ハンズオン"></div><small class="error" data-no="13">タイトルを入力してください</small></div>
 
-    <div class="field"><label data-no="11">概要</label><div data-no="12"><textarea placeholder="イベントの内容を 200 文字以内で入力"></textarea></div><small class="error" data-no="13">概要は 200 文字以内で入力してください</small></div>
+    <div class="field"><label data-no="14">概要</label><div data-no="15"><textarea placeholder="イベントの内容を 200 文字以内で入力"></textarea></div><small class="error" data-no="16">概要は 200 文字以内で入力してください</small></div>
 
-    <div class="field"><label data-no="14">カテゴリ（必須）</label><div data-no="15"><select><option>勉強会</option><option>交流会</option><option>社内研修</option></select></div><small class="error" data-no="16">カテゴリを選択してください</small></div>
+    <div class="field"><label data-no="17">カテゴリ（必須）</label><div data-no="18"><select><option>勉強会</option><option>交流会</option><option>社内研修</option></select></div><small class="error" data-no="19">カテゴリを選択してください</small></div>
 
     <div class="stack">
-      <span data-no="17">開催形式</span>
-      <div class="row" data-no="18">
-        <label class="check"><input type="radio" name="format">会場</label>
-        <label class="check"><input type="radio" name="format" checked>オンライン</label>
+      <span data-no="20">開催形式</span>
+      <div class="row" data-no="21">
+        <label class="check" data-no="22"><input type="radio" name="format">会場</label>
+        <label class="check" data-no="23"><input type="radio" name="format" checked>オンライン</label>
       </div>
     </div>
 
-    <div class="field"><label data-no="22">配信 URL（必須）</label><div data-no="23"><input type="url" value="https://meet.example.com/ts-handson" placeholder="https://"></div><small class="error" data-no="24">配信 URL は https:// で始まる形式で入力してください</small></div>
+    <div class="field"><label data-no="27">配信 URL（必須）</label><div data-no="28"><input type="url" value="https://meet.example.com/ts-handson" placeholder="https://"></div><small class="error" data-no="29">配信 URL は https:// で始まる形式で入力してください</small></div>
 
     <div class="cols-2">
-      <div class="field"><label data-no="25">開催日（必須）</label><div data-no="26"><input type="date" value="2026-10-12" disabled></div><small class="error" data-no="27">開催日を入力してください</small></div>
-      <div class="field"><label data-no="28">定員（必須）</label><div data-no="29"><input type="number" value="30"></div><small class="error" data-no="30">定員は 1〜999 で入力してください</small></div>
+      <div class="field"><label data-no="30">開催日（必須）</label><div data-no="31"><input type="date" value="2026-10-12" disabled></div><small class="error" data-no="32">開催日を入力してください</small></div>
+      <div class="field"><label data-no="33">定員（必須）</label><div data-no="34"><input type="number" value="30"></div><small class="error" data-no="35">定員は 1〜999 で入力してください</small></div>
     </div>
 
     <div class="stack">
-      <span data-no="31">タグ（3 つまで）</span>
-      <div class="cols-2" data-no="32">
-        <label class="check"><input type="checkbox" checked>初心者向け</label>
-        <label class="check"><input type="checkbox" checked>ハンズオン</label>
-        <label class="check"><input type="checkbox">交流</label>
-        <label class="check"><input type="checkbox">無料</label>
-        <label class="check"><input type="checkbox">英語</label>
+      <span data-no="36">タグ（3 つまで）</span>
+      <div class="cols-2" data-no="37">
+        <label class="check" data-no="38"><input type="checkbox" checked>初心者向け</label>
+        <label class="check" data-no="39"><input type="checkbox" checked>ハンズオン</label>
+        <label class="check" data-no="40"><input type="checkbox">交流</label>
+        <label class="check" data-no="41"><input type="checkbox">無料</label>
+        <label class="check" data-no="42"><input type="checkbox">英語</label>
       </div>
-      <small class="error" data-no="33">タグは 3 つまで選べます</small>
+      <small class="error" data-no="43">タグは 3 つまで選べます</small>
     </div>
 
-    <label class="check" data-no="34"><input type="checkbox">変更を参加者にメールで通知する</label>
+    <label class="check" data-no="44"><input type="checkbox">変更を参加者にメールで通知する</label>
 
     <div class="spacer"></div>
 
-    <button class="primary" data-no="36">更新する</button>
-    <button data-no="37">削除</button>
+    <div class="row">
+      <button class="primary" data-no="46">更新する</button>
+      <button data-no="47">削除</button>
+    </div>
   </section>
 
   <section class="screen" data-title="下書きを編集（会場を選択）">
@@ -85,14 +87,14 @@
         <label class="check"><input type="radio" name="format2">オンライン</label>
       </div>
     </div>
-    <div class="field"><label data-no="19">会場名（必須）</label><div data-no="20"><input type="text" value="渋谷オフィス 5F" placeholder="例: 渋谷オフィス 5F セミナールーム"></div><small class="error" data-no="21">会場名を入力してください</small></div>
+    <div class="field"><label data-no="24">会場名（必須）</label><div data-no="25"><input type="text" value="渋谷オフィス 5F" placeholder="例: 渋谷オフィス 5F セミナールーム"></div><small class="error" data-no="26">会場名を入力してください</small></div>
     <div class="note">開催日、定員、タグ（通常と同じ）</div>
     <div class="spacer"></div>
-    <div class="cols-2">
-      <button data-no="35">下書き保存</button>
+    <div class="row">
+      <button data-no="45">下書き保存</button>
       <button class="primary">公開する</button>
+      <button>削除</button>
     </div>
-    <button>削除</button>
   </section>
 
   <section class="screen" data-title="削除の確認">
@@ -103,12 +105,12 @@
     </header>
     <h1>イベントを編集</h1>
     <div class="modal">
-      <div class="dialog" data-no="38">
-        <h2>イベントを削除しますか？</h2>
-        <p>「はじめての TypeScript ハンズオン」を削除します。この操作は取り消せません。</p>
-        <div class="cols-2">
-          <button data-no="39">キャンセル</button>
-          <button class="primary" data-no="40">削除する</button>
+      <div class="dialog" data-no="48">
+        <h2 data-no="49">イベントを削除しますか？</h2>
+        <p data-no="50">「はじめての TypeScript ハンズオン」を削除します。この操作は取り消せません。</p>
+        <div class="row">
+          <button data-no="51">キャンセル</button>
+          <button class="primary" data-no="52">削除する</button>
         </div>
       </div>
     </div>
@@ -122,11 +124,11 @@
     </header>
     <h1>イベントを編集</h1>
     <div class="modal">
-      <div class="dialog" data-no="41">
-        <p>入力内容が保存されていません。このページを離れますか？</p>
-        <div class="cols-2">
-          <button data-no="42">キャンセル</button>
-          <button class="primary" data-no="43">離れる</button>
+      <div class="dialog" data-no="53">
+        <p data-no="54">入力内容が保存されていません。このページを離れますか？</p>
+        <div class="row">
+          <button data-no="55">キャンセル</button>
+          <button class="primary" data-no="56">離れる</button>
         </div>
       </div>
     </div>

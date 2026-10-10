@@ -1,8 +1,8 @@
 /**
  * SCR-001 イベント一覧 の Playwright テスト
  *
- * 設計書: docs/screens/SCR-001_event-list.md
- * ワイヤーフレーム: docs/screens/SCR-001_event-list.html
+ * 設計書: docs/screens/SCR-001_event-list/SCR-001_event-list.md
+ * ワイヤーフレーム: docs/screens/SCR-001_event-list/SCR-001_event-list.html
  * メッセージ一覧: docs/screens/messages.md
  * 共通ルール: docs/screens/common-rules.md
  *
@@ -28,7 +28,7 @@
  * - キーワードは、どの文字も何文字でも入力でき、違反はバリデーションでエラーになる
  */
 import type { Page } from '@playwright/test';
-import { test, expect, deferred, type ApiMock, type MockReply, type MockedOperation } from '../support/api-mock';
+import { test, expect, deferred, type ApiMock, type MockReply, type MockedOperation } from '../api-mock';
 
 // ---- メッセージ（docs/screens/messages.md）------------------------------------
 // 変数（{v1}、{v2}…）のあるメッセージは関数にする。引数は変数の番号の順
@@ -119,35 +119,37 @@ const LIST_PATH = '/events';
 // ---- 部品（番号はワイヤーフレームの data-no） -------------------------------
 
 const ui = (page: Page) => {
-  const table = page.getByRole('table'); // No.11
-  /** 表の 1 行。タイトルのリンク（No.17）の文言で特定する。データのセルは No.18〜21 */
+  const table = page.getByRole('table'); // No.17
+  /** 表の 1 行。タイトルのリンク（No.23）の文言で特定する。データのセルは No.24〜21 */
   const row = (title: string) => table.getByRole('row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
   return {
-    /** ユーザー名（No.2）。文言で特定する */
+    /** ユーザー名（No.4）。文言で特定する */
     userName: (name: string) => page.getByText(name, { exact: true }),
-    heading: page.getByRole('heading', { name: 'イベント一覧', exact: true }), // No.3
-    create: page.getByRole('button', { name: 'イベントを作成', exact: true }), // No.4
-    keyword: page.getByLabel(/^キーワード/), // No.7（見出しは No.6）
-    search: page.getByRole('button', { name: '検索', exact: true }), // No.9
+    heading: page.getByRole('heading', { name: 'イベント一覧', exact: true }), // No.5
+    create: page.getByRole('button', { name: 'イベントを作成', exact: true }), // No.6
+    keyword: page.getByLabel(/^キーワード/), // No.9（見出しは No.8）
+    search: page.getByRole('button', { name: '検索', exact: true }), // No.11
     /**
-     * ステータスのタブ（No.10）。タグが「実装時に決める」なので文言で特定する。
-     * 「公開中」「下書き」「終了」は表のステータス（No.18）にも出るので、表より前にあるタブを first() で選ぶ
+     * ステータスのタブ（No.12）。タグが「実装時に決める」なので文言で特定する。
+     * 「公開中」「下書き」「終了」は表のステータス（No.24）にも出るので、表より前にあるタブを first() で選ぶ
      */
     tab: (name: string) => page.getByText(name, { exact: true }).first(),
     table,
-    columnHeader: (name: string) => table.getByRole('columnheader', { name, exact: true }), // No.12〜16
+    columnHeader: (name: string) => table.getByRole('columnheader', { name, exact: true }), // No.18〜16
     rows: table.getByRole('row'),
     row,
-    titleLink: (title: string) => page.getByRole('link', { name: title, exact: true }), // No.17
-    onlineLink: (title: string) => row(title).getByRole('link', { name: 'オンライン会場', exact: true }), // No.21
-    prev: page.getByRole('button', { name: '前へ', exact: true }), // No.23（ページ送りは No.22）
-    pageInfo: (text: string) => page.getByText(text, { exact: true }), // No.24
-    next: page.getByRole('button', { name: '次へ', exact: true }), // No.25
-    help: page.getByRole('link', { name: 'ヘルプ', exact: true }), // No.27
-    noData: page.getByText('条件に合うイベントはありません'), // No.29
-    reload: page.getByRole('button', { name: '再読み込み', exact: true }), // No.31
-    // エラー表示（No.5、8、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる。
-    // 読み込み中の表示（No.28）はスピナーで、目印になる文言がない
+    titleLink: (title: string) => page.getByRole('link', { name: title, exact: true }), // No.23
+    /** 読み上げ名は「{title} のオンライン会場」。画面に見える文言は「オンライン会場」 */
+    onlineLink: (title: string) => row(title).getByRole('link', { name: `${title} のオンライン会場`, exact: true }), // No.27
+    prev: page.getByRole('button', { name: '前へ', exact: true }), // No.29（ページ送りは No.28）
+    pageInfo: (text: string) => page.getByText(text, { exact: true }), // No.30
+    next: page.getByRole('button', { name: '次へ', exact: true }), // No.31
+    /** 文言のない「？」のアイコンだけのリンク。読み上げ名「ヘルプ」で特定する */
+    help: page.getByRole('link', { name: 'ヘルプ', exact: true }), // No.34
+    noData: page.getByText('条件に合うイベントはありません'), // No.36
+    reload: page.getByRole('button', { name: '再読み込み', exact: true }), // No.38
+    // エラー表示（No.7、8、30）はタグが「実装時に決める」なので、メッセージの文言で確かめる。
+    // 読み込み中の表示（No.35）はスピナーで、目印になる文言がない
   };
 };
 
@@ -1107,6 +1109,32 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(ui(page).onlineLink(onlineEvent.title)).toBeVisible();
     });
 
+    test('[会場 読み上げ名] 「オンライン会場」のリンクは、「{title} のオンライン会場」という名前で見つかる（どの行のリンクかがわかる）', async ({ page, api }) => {
+      await open(page, api, { list: listOf([onlineEvent]) });
+      const link = page.getByRole('link', { name: `${onlineEvent.title} のオンライン会場`, exact: true });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveText('オンライン会場');
+    });
+
+    test('[ヘルプ 読み上げ名] 文言のないアイコンだけのリンクは、「ヘルプ」という名前で見つかる', async ({ page, api }) => {
+      await open(page, api);
+      await expect(ui(page).help).toBeVisible();
+    });
+
+    test('[共通ルール ブラウザの戻るで画面に戻ったときに、スクロール位置を復元するか] 一覧をスクロールしてから詳細へ移り、ブラウザの戻るで戻ると、離れたときのスクロール位置で表示する', async ({ page, api }) => {
+      await open(page, api, { list: fullPageList });
+      const target = fullPageList.items[10];
+      await page.mouse.wheel(0, 400);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+      const before = await page.evaluate(() => window.scrollY);
+      api.allowUnmockedCalls(); // 遷移先の詳細画面の通信は確かめない
+      await ui(page).titleLink(target.title).click();
+      await expect(page).toHaveURL(new RegExp(`/events/${target.id}$`));
+      await page.goBack();
+      await expect(ui(page).table).toBeVisible();
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+    });
+
     test('[会場 表示条件] format が onsite なら、リンクにせず venueName を文字で表示する', async ({ page, api }) => {
       await open(page, api, { list: listOf([onsiteEvent]) });
       const u = ui(page);
@@ -1357,7 +1385,7 @@ test.describe('SCR-001 イベント一覧', () => {
       await stays(page);
     });
 
-    test.fixme('[「ヘルプ」リンク押下] ヘルプを別タブで開く（TBD: 「ヘルプ」リンクの遷移先 URL はどこか）', async () => {});
+    test.fixme('[ヘルプのリンク押下] ヘルプを別タブで開く（TBD: ヘルプのリンクの遷移先 URL はどこか）', async () => {});
   });
 
   test.describe('権限', () => {

@@ -1,8 +1,8 @@
 /**
  * SCR-002 イベント編集 の Playwright テスト
  *
- * 設計書: docs/screens/SCR-002_event-edit.md
- * ワイヤーフレーム: docs/screens/SCR-002_event-edit.html
+ * 設計書: docs/screens/SCR-002_event-edit/SCR-002_event-edit.md
+ * ワイヤーフレーム: docs/screens/SCR-002_event-edit/SCR-002_event-edit.html
  * メッセージ一覧: docs/screens/messages.md
  * 共通ルール: docs/screens/common-rules.md
  *
@@ -30,7 +30,7 @@
  * 下書きなら「下書き保存」ボタンが表示され、開催日も編集できるため。保存しても画面に残るので、送った値も確かめやすい。
  */
 import type { Page } from '@playwright/test';
-import { test, expect, deferred, type ApiMock } from '../support/api-mock';
+import { test, expect, deferred, type ApiMock } from '../api-mock';
 
 // ---- メッセージ（docs/screens/messages.md）------------------------------------
 // 変数（{v1}、{v2}…）のあるメッセージは関数にする。引数は変数の番号の順
@@ -147,33 +147,33 @@ const ui = (page: Page) => {
   const dialog = page.getByRole('dialog').or(page.getByRole('alertdialog'));
   return {
     header: page.getByText('イベント管理', { exact: true }), // No.1
-    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
-    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.3
-    /** ステータス（No.4）。文言で特定する */
+    back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.5
+    heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.6
+    /** ステータス（No.7）。文言で特定する */
     status: (label: string) => page.getByText(label, { exact: true }),
-    /** 主催者の見出し（No.5）。見出しとデータは別の部品 */
+    /** 主催者の見出し（No.8）。見出しとデータは別の部品 */
     organizerLabel: page.getByText('主催', { exact: true }),
-    /** 主催者（No.6）。文言で特定する */
+    /** 主催者（No.9）。文言で特定する */
     organizer: (name: string) => page.getByText(name, { exact: true }),
-    title: page.getByLabel(/^タイトル/), // No.9
-    summary: page.getByLabel(/^概要/), // No.12
-    category: page.getByLabel(/^カテゴリ/), // No.15
-    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.18
-    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.18
-    venue: page.getByLabel(/^会場名/), // No.20
-    onlineUrl: page.getByLabel(/^配信 URL/), // No.23
-    startDate: page.getByLabel(/^開催日/), // No.26
-    capacity: page.getByLabel(/^定員/), // No.29
-    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.32
-    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.34
-    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.35
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.36（下書き）
-    update: page.getByRole('button', { name: '更新する', exact: true }), // No.36（公開中・終了）
-    del: page.getByRole('button', { name: '削除', exact: true }), // No.37
-    dialog, // No.38（削除の確認）、No.41（離脱の確認）。同時には 1 つしか表示されない
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.39、No.42
-    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.40
-    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.43
+    title: page.getByLabel(/^タイトル/), // No.12
+    summary: page.getByLabel(/^概要/), // No.15
+    category: page.getByLabel(/^カテゴリ/), // No.18
+    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.21
+    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.21
+    venue: page.getByLabel(/^会場名/), // No.25
+    onlineUrl: page.getByLabel(/^配信 URL/), // No.28
+    startDate: page.getByLabel(/^開催日/), // No.31
+    capacity: page.getByLabel(/^定員/), // No.34
+    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.37
+    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.44
+    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.45
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.46（下書き）
+    update: page.getByRole('button', { name: '更新する', exact: true }), // No.46（公開中・終了）
+    del: page.getByRole('button', { name: '削除', exact: true }), // No.47
+    dialog, // No.48（削除の確認）、No.53（離脱の確認）。同時には 1 つしか表示されない
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.51、No.55
+    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.52
+    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.56
   };
 };
 
@@ -1244,6 +1244,18 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
+    test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await expect(page.getByRole('button', { name: 'メニューを開く', exact: true })).toBeVisible();
+    });
+
+    test('[ユーザーのアイコン 読み上げ名] 人の形のアイコンは、「ログイン中のユーザー」という名前の画像として見つかる', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await expect(page.getByRole('img', { name: 'ログイン中のユーザー', exact: true })).toBeVisible();
+    });
+
+    test.fixme('[メニューのボタン押下] 全画面で共通のメニューを開く（TBD: メニューに何を並べるか）', async () => {});
+
     test('[document.title] 開くと、ページのタイトルを「イベントを編集」にする', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(page).toHaveTitle('イベントを編集');
@@ -1383,7 +1395,7 @@ test.describe('SCR-002 イベント編集', () => {
     for (const c of placeholderCases) {
       test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent);
-        if ('online' in c) await ui(page).online.check(); // No.23 は「オンライン」のときだけ表示される
+        if ('online' in c) await ui(page).online.check(); // No.28 は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
     }
@@ -1606,6 +1618,22 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(ui(page).dialog).toBeVisible();
       await expect(ui(page).title.click({ timeout: 1000 })).rejects.toThrow();
       await expect(ui(page).title).toHaveValue('変更したタイトル');
+    });
+  });
+
+  test.describe('共通ルール（通信・メッセージ）', () => {
+    test(`[共通ルール トーストが表示されている間に、次のトーストを表示するとき] ${q(M.MSG013)}のトーストが出ている間に次のトーストを出すと、前のトーストを消して、新しいものだけを表示する`, async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, version: 2 } });
+      api.on('DELETE /events/{eventId}', { status: 403, body: apiError('forbidden') });
+      const u = ui(page);
+      await u.draft.click();
+      await expect(page.getByText(M.MSG013)).toBeVisible();
+      // 前のトーストが自動で消えるのを待たずに、次のトースト（削除の 403）を出す
+      await u.del.click();
+      await u.dialogDelete.click();
+      await expect(page.getByText(M.MSG020)).toBeVisible();
+      await expect(page.getByText(M.MSG013)).toBeHidden();
     });
   });
 

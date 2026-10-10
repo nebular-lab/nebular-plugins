@@ -1,6 +1,7 @@
 /*
  * 画面設計書用ワイヤーフレームの共通スタイル。
- * 見た目は「何がどこにあるか」だけを示す。色・余白・フォントの作り込みはしない。
+ * 見た目は「何がどこにあるか」だけを示す。色・フォントの作り込みはしない。
+ * PC 表示の前提で、部品どうしが詰まって見えないように、余白は広めにとる。
  * 各画面の HTML はこのファイルを読み込むだけにし、独自の CSS は書かない。
  */
 
@@ -9,21 +10,21 @@
   --fill: #eee;
   --muted: #888;
   --badge: #e5484d;
-  --gap: 12px;
+  --gap: 24px;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  padding: 48px 32px;
+  padding: 72px 56px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 56px 40px;
+  gap: 88px 64px;
   background: #f4f4f4;
   color: #222;
-  font: 14px/1.5 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font: 15px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
 
 /* ---- 画面の枠 ---- */
@@ -35,7 +36,7 @@ body {
   gap: var(--gap);
   width: 1024px; /* PC 表示の前提 */
   min-height: 640px;
-  padding: 16px;
+  padding: 40px 48px;
   background: #fff;
   border: 2px solid var(--line);
 }
@@ -44,7 +45,7 @@ body {
 .screen[data-title]::after {
   content: attr(data-title);
   position: absolute;
-  top: -28px;
+  top: -32px;
   left: 0;
   font-weight: bold;
   color: var(--muted);
@@ -67,27 +68,27 @@ body {
 header, footer, nav, aside, .box {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px;
+  gap: 12px;
+  padding: 16px 24px;
   background: var(--fill);
   border: 1.5px solid var(--line);
 }
 header.row, footer.row, nav.row, aside.row, .box.row { flex-direction: row; align-items: center; }
-.screen > header { margin: -16px -16px 0; border-width: 0 0 1.5px; }
-.screen > footer { margin: 0 -16px -16px; border-width: 1.5px 0 0; }
+.screen > header { margin: -40px -48px 0; padding: 16px 48px; border-width: 0 0 1.5px; }
+.screen > footer { margin: 0 -48px -40px; padding: 16px 48px; border-width: 1.5px 0 0; }
 
 /* ---- 文字 ---- */
 
 h1, h2, h3, p { margin: 0; }
-h1 { font-size: 20px; }
-h2 { font-size: 17px; }
-h3 { font-size: 15px; }
+h1 { font-size: 24px; }
+h2 { font-size: 19px; }
+h3 { font-size: 16px; }
 small, .muted { color: var(--muted); }
 /* エラー表示。初期表示では出ない部品なので、点線の枠で描く */
 .error {
   display: block;
-  padding: 2px 6px;
-  font-size: 12px;
+  padding: 4px 10px;
+  font-size: 13px;
   font-weight: bold;
   color: #222;
   border: 1.5px dashed var(--muted);
@@ -96,22 +97,22 @@ a { color: inherit; text-decoration: underline; }
 
 /* ---- 入力 ---- */
 
-.field { display: flex; flex-direction: column; gap: 4px; }
-label.check { display: flex; gap: 6px; align-items: center; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+label.check { display: flex; gap: 8px; align-items: center; }
 
 input, select, textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px 12px;
   font: inherit;
   background: #fff;
   border: 1.5px solid var(--line);
   border-radius: 0;
 }
 input[type="checkbox"], input[type="radio"] { width: auto; margin: 0; }
-textarea { min-height: 80px; resize: none; }
+textarea { min-height: 96px; resize: none; }
 
 button {
-  padding: 10px 14px;
+  padding: 12px 28px;
   font: inherit;
   background: #fff;
   border: 2px solid var(--line);
@@ -132,7 +133,7 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 .image {
   display: grid;
   place-items: center;
-  min-height: 120px;
+  min-height: 160px;
   color: var(--muted);
   border: 1.5px solid var(--line);
   background: repeating-linear-gradient(45deg, #fff 0 8px, var(--fill) 8px 16px);
@@ -150,20 +151,20 @@ input:disabled, select:disabled, textarea:disabled, button:disabled {
 }
 
 ul.list, ol.list { margin: 0; padding: 0; list-style: none; border: 1.5px solid var(--line); }
-ul.list > li, ol.list > li { padding: 10px; border-bottom: 1px solid var(--line); }
+ul.list > li, ol.list > li { padding: 16px; border-bottom: 1px solid var(--line); }
 ul.list > li:last-child, ol.list > li:last-child { border-bottom: 0; }
 
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 6px 8px; text-align: left; border: 1px solid var(--line); }
+th, td { padding: 12px 16px; text-align: left; border: 1px solid var(--line); }
 th { background: var(--fill); }
 
 .tabs { display: flex; border-bottom: 1.5px solid var(--line); }
-.tabs > * { padding: 8px 14px; border: 1.5px solid transparent; border-bottom: 0; }
+.tabs > * { padding: 12px 24px; border: 1.5px solid transparent; border-bottom: 0; }
 .tabs > .active { border-color: var(--line); background: #fff; margin-bottom: -1.5px; }
 
 /* 描けないものを言葉で置いておく（例: 「ここに地図」） */
 .note {
-  padding: 8px;
+  padding: 16px;
   color: var(--muted);
   border: 1.5px dashed var(--muted);
 }
@@ -182,8 +183,9 @@ th { background: var(--fill); }
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  width: 85%;
-  padding: 16px;
+  width: 480px;
+  max-width: 85%;
+  padding: 32px;
   background: #fff;
   border: 2px solid var(--line);
 }
@@ -194,8 +196,9 @@ th { background: var(--fill); }
 [data-no]::before {
   content: attr(data-no);
   position: absolute;
-  top: -10px;
-  left: -10px;
+  /* 部品に重ならないように、部品の左上の外側に離して置く */
+  top: -12px;
+  left: -28px;
   z-index: 1;
   min-width: 20px;
   height: 20px;
@@ -206,3 +209,6 @@ th { background: var(--fill); }
   background: var(--badge);
   border-radius: 10px;
 }
+
+/* 中に番号つきの部品を持つまとまり（表、ヘッダー、ダイアログなど）は、中の最初の部品の番号と重ならないように、さらに左へ離す */
+[data-no]:has([data-no])::before { left: -54px; }

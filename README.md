@@ -47,7 +47,7 @@ Claude Code で次を実行する。
 
 ### 作られるファイル
 
-既定では `docs/screens/` に置く。
+既定では `docs/screens/` に置く。画面ごとのファイルは、画面 ID のフォルダにまとめる。
 
 | ファイル | 内容 |
 | --- | --- |
@@ -56,16 +56,17 @@ Claude Code で次を実行する。
 | `common-rules.md` | 共通ルール（全画面で同じになる扱い） |
 | `screen-flow.drawio` | 画面遷移図 |
 | `wireframe.css` | ワイヤーフレームの共通スタイル |
-| `SCR-NNN_<slug>.html` | ワイヤーフレーム |
-| `SCR-NNN_<slug>.md` | 画面設計書 |
+| `api-mock.ts` | Playwright テストで API をモックする補助 |
+| `SCR-NNN_<slug>/SCR-NNN_<slug>.html` | ワイヤーフレーム |
+| `SCR-NNN_<slug>/SCR-NNN_<slug>.md` | 画面設計書 |
+| `SCR-NNN_<slug>/SCR-NNN_<slug>.spec.ts` | Playwright テスト |
 
 ### サンプル
 
 イベント管理の 4 画面（一覧、編集、詳細、作成）で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
 
-- [docs/screens/](plugins/screen-design/examples/docs/screens/): 画面設計書、ワイヤーフレーム、共有ファイル、画面遷移図
+- [docs/screens/](plugins/screen-design/examples/docs/screens/): 共有ファイル、画面遷移図と、画面ごとのフォルダ（ワイヤーフレーム、画面設計書、Playwright テスト）
 - [docs/api/openapi.yaml](plugins/screen-design/examples/docs/api/openapi.yaml): API 定義
-- [playwright-test/](plugins/screen-design/examples/playwright-test/): 生成した Playwright テスト
 
 ## 開発
 
