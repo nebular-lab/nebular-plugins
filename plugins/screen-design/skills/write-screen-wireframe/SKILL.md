@@ -24,7 +24,7 @@ allowed-tools:
 - 記述規則: [references/wireframe-rules.md](references/wireframe-rules.md)
 - ひな形: [assets/template.html](assets/template.html)
 - 共通 CSS: [assets/wireframe.css](assets/wireframe.css)
-- 画面一覧の雛形: [assets/screens-readme.md](assets/screens-readme.md)
+- 共有ファイルの雛形: [assets/shared/](assets/shared/)（`overview.md`、`messages.md`）と、共通ルールの雛形 [../write-screen-common-rules/assets/common-rules.md](../write-screen-common-rules/assets/common-rules.md)
 - 整合性チェックのプロンプト: [../write-screen-spec/references/consistency-check.md](../write-screen-spec/references/consistency-check.md)
 - サンプル: [../../examples/docs/screens/](../../examples/docs/screens/)（書き方に迷ったら見る）
 
@@ -39,10 +39,11 @@ allowed-tools:
 ### 1. 準備
 
 1. 保存先を決める。既定は `docs/screens/`。
-   - リポジトリの中に、画面一覧（`README.md`）と `SCR-NNN_*.md` / `SCR-NNN_*.html` が置かれた場所がすでにあれば、そこを使う。
+   - リポジトリの中に、概要（`overview.md`）と `SCR-NNN_*.md` / `SCR-NNN_*.html` が置かれた場所がすでにあれば、そこを使う。
    - どこにもなければ、`docs/screens/` を作ってよいかをユーザーに 1 度だけ確認する。別の場所を指定されたらそこを使う。
    - 以下、決まった場所を「保存先」と呼ぶ。
-2. 保存先の `README.md`（画面一覧）を読み、既存の画面 ID と slug を確認する。なければ [screens-readme.md](assets/screens-readme.md) をもとに作る（例の行は消し、「入力の共通ルール」の節は残す。中身は `/write-screen-spec` で確認する）。
+2. 保存先の `overview.md` の「画面一覧」を読み、既存の画面 ID と slug を確認する。共有ファイルがなければ、雛形をコピーして作る（`overview.md` と `messages.md` は [assets/shared/](assets/shared/) から。例の行は消す。`common-rules.md` は [../write-screen-common-rules/assets/common-rules.md](../write-screen-common-rules/assets/common-rules.md) から）。
+   - `common-rules.md` の設定が `TBD` のままなら、先に `/write-screen-common-rules` で決めておくとよいことを伝える（決めずに進めてもよい）。
 3. 保存先に `wireframe.css` がなければ [assets/wireframe.css](assets/wireframe.css) をコピーする。すでにあれば触らない。
 4. 同じ画面のワイヤーフレームや設計書（`.md`）があれば読む。
 5. 新規なら次の連番で ID を振る（`SCR-001` から 3 桁ゼロ埋め）。廃止した画面の ID も含め、一度使った ID は再利用しない。slug は英小文字とハイフン。
@@ -53,7 +54,9 @@ allowed-tools:
 1 つずつ聞くより、下書きを描いて見せたほうが話が早い。ユーザーの説明、手書きのメモ、スクリーンショット、既存画面の URL など、渡されたものから下書きを描いてから確認する。
 
 - スマホか PC かは、既存のワイヤーフレームの `.screen` に `.pc` があるかどうかから推測し、案として示す。
-- 上から順に何が並ぶか、表示する文言、描いておくべき状態（データなし、エラー、モーダル表示など）を、下書きの中で案として示す。
+- 上から順に何が並ぶか、表示する文言、描いておくべき状態（読み込み中、データなし、モーダル表示など）を、下書きの中で案として示す。
+- エラー表示は、最初から全部描いておく。画面上部に 1 つと、すべての入力項目の下に 1 つずつ（規則の「エラー表示」）。あとから足すと番号がずれるため。要らないものがあれば、下書きを見せるときに消すかを聞く。
+- 確認ダイアログ（削除の確認、未保存での離脱の確認など）が要りそうなら、`.screen` を足して描く（規則の「確認ダイアログ」）。
 - 決まっていない文言は `TBD` にして先へ進む。
 
 下書きを見せて、違う箇所だけ指摘してもらう。往復は 2〜4 回程度に収める。
@@ -62,7 +65,7 @@ allowed-tools:
 
 1. [assets/template.html](assets/template.html) をもとに、保存先の `SCR-NNN_<slug>.html` を書く。使える要素とクラスは規則の表の範囲に限る。
 2. 部品に `data-no` で番号を振る。
-3. 画面一覧の行を追加（更新時は該当行を更新）する。設計書がまだない画面は、「設計書」の列を `-` にする。
+3. `overview.md` の「画面一覧」に行を追加（更新時は該当行を更新）する。まだないもの（設計書、E2E テスト）の列は `-` にする。
 
 既存のワイヤーフレームに部品を足したり消したりして番号が変わった場合は、「旧 No → 新 No」の対応表を作っておく（報告で使う）。
 
@@ -82,7 +85,7 @@ allowed-tools:
 
 [../write-screen-spec/references/consistency-check.md](../write-screen-spec/references/consistency-check.md) のプロンプトを埋めてサブエージェントに渡し、ワイヤーフレームの規則違反と、設計書との食い違いを探させる。
 
-- ワイヤーフレーム単体の「エラー」（番号の重複・順序、規則にない書き方など）は、ここで直して繰り返す。
+- ワイヤーフレーム単体の「エラー」（番号の重複・順序、規則にない書き方など）は、ここで直してもう一度チェックする。チェックは最大 3 回までにし、それでも残ったエラーは報告で伝える。
 - 設計書との食い違いは、設計書を直さずに残し、報告で伝える。設計書は `/write-screen-spec` で直す。
 - 設計書がまだない画面では、ワイヤーフレーム単体の観点だけを見てもらう。
 
@@ -94,6 +97,7 @@ allowed-tools:
 - 見た目の確認と整合性チェックの結果
 - 振った番号と部品の対応（No と部品名の一覧）
 - `TBD` にした箇所
-- 設計書（`.md`）がすでにあり、番号が変わった場合は、「旧 No → 新 No」の対応表。設計書は書き換えず、`/write-screen-spec` で更新するよう伝える
+- 設計書（`.md`）がすでにあり、番号が変わった場合は、「旧 No → 新 No」の対応表。設計書は書き換えず、`/write-screen-spec` で更新するよう伝える（そのあと `/write-screen-flow` と `/write-screen-e2e` の更新も必要になる）
+- 次に使う skill。設計書がまだなければ `/write-screen-spec`
 
 コミットはしない。

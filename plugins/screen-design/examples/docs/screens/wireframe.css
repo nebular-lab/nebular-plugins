@@ -84,8 +84,15 @@ h1 { font-size: 20px; }
 h2 { font-size: 17px; }
 h3 { font-size: 15px; }
 small, .muted { color: var(--muted); }
-.error { font-size: 12px; font-weight: bold; color: #222; }
-.error::before { content: "⚠ "; }
+/* エラー表示。初期表示では出ない部品なので、点線の枠で描く */
+.error {
+  display: block;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #222;
+  border: 1.5px dashed var(--muted);
+}
 a { color: inherit; text-decoration: underline; }
 
 /* ---- 入力 ---- */

@@ -18,29 +18,32 @@
       <button class="primary" data-no="4">イベントを作成</button>
     </div>
 
+    <p class="error" data-no="5">検索条件が正しくありません。条件を変えて検索してください</p>
+
     <div class="row">
-      <label class="field grow" data-no="5">
+      <label class="field grow" data-no="6">
         キーワード
         <input type="search" placeholder="タイトル・概要で検索">
+        <small class="error" data-no="7">キーワードは 50 文字以内で入力してください</small>
       </label>
-      <button data-no="6">検索</button>
+      <button data-no="8">検索</button>
     </div>
 
-    <div class="tabs" data-no="7">
+    <div class="tabs" data-no="9">
       <span class="active">すべて</span>
       <span>公開中</span>
       <span>下書き</span>
       <span>終了</span>
     </div>
 
-    <table data-no="8">
+    <table data-no="10">
       <tr><th>タイトル</th><th>ステータス</th><th>開催日</th><th>参加者</th><th>会場</th></tr>
       <tr>
-        <td><a data-no="9">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
-        <td data-no="10">公開中</td>
-        <td data-no="11">2026/10/12</td>
-        <td data-no="12">18 / 30 人</td>
-        <td><a data-no="13">オンライン会場</a></td>
+        <td><a data-no="11">はじめての TypeScript ハンズオン 〜型の基本から…</a></td>
+        <td data-no="12">公開中</td>
+        <td data-no="13">2026/10/12</td>
+        <td data-no="14">18 / 30 人</td>
+        <td><a data-no="15">オンライン会場</a></td>
       </tr>
       <tr>
         <td>エンジニア交流会 秋</td>
@@ -54,17 +57,17 @@
       </tr>
     </table>
 
-    <div class="row between" data-no="14">
-      <button data-no="15">前へ</button>
-      <span data-no="16">1 / 3 ページ（全 52 件）</span>
-      <button data-no="17">次へ</button>
+    <div class="row between" data-no="16">
+      <button data-no="17">前へ</button>
+      <span data-no="18">1 / 3 ページ（全 52 件）</span>
+      <button data-no="19">次へ</button>
     </div>
 
     <div class="spacer"></div>
 
-    <footer class="row between" data-no="18">
+    <footer class="row between" data-no="20">
       <small>© Example Inc.</small>
-      <a data-no="19">ヘルプ</a>
+      <a data-no="21">ヘルプ</a>
     </footer>
   </section>
 
@@ -74,7 +77,7 @@
       <span class="row"><span class="icon">人</span><span>山田 花子</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <div class="note" data-no="20">読み込み中（一覧の位置にスピナーを表示）</div>
+    <div class="note" data-no="22">読み込み中（一覧の位置にスピナーを表示）</div>
   </section>
 
   <section class="screen pc" data-title="データなし">
@@ -91,7 +94,7 @@
       <button>検索</button>
     </div>
     <div class="tabs"><span class="active">すべて</span><span>公開中</span><span>下書き</span><span>終了</span></div>
-    <p class="note" data-no="21">条件に合うイベントはありません</p>
+    <p class="note" data-no="23">条件に合うイベントはありません</p>
   </section>
 
   <section class="screen pc" data-title="エラー">
@@ -100,10 +103,8 @@
       <span class="row"><span class="icon">人</span><span>佐藤 一郎</span></span>
     </header>
     <h1>イベント一覧</h1>
-    <div class="box" data-no="22">
-      <p>イベントを読み込めませんでした。</p>
-      <button data-no="23">再読み込み</button>
-    </div>
+    <p class="error" data-no="24">イベントを読み込めませんでした。</p>
+    <div class="row"><button data-no="25">再読み込み</button></div>
   </section>
 
 </body>
