@@ -65,7 +65,7 @@ allowed-tools:
 
 1. [assets/template.html](assets/template.html) をもとに、保存先の `SCR-NNN_<slug>.html` を書く。使える要素とクラスは規則の表の範囲に限る。
 2. 部品に `data-no` で番号を振る。
-3. `overview.md` の「画面一覧」に行を追加（更新時は該当行を更新）する。まだないもの（設計書、E2E テスト）の列は `-` にする。
+3. `overview.md` の「画面一覧」に行を追加（更新時は該当行を更新）する。まだないもの（設計書、Playwright テスト）の列は `-` にする。
 
 既存のワイヤーフレームに部品を足したり消したりして番号が変わった場合は、「旧 No → 新 No」の対応表を作っておく（報告で使う）。
 
@@ -97,7 +97,7 @@ allowed-tools:
 - 見た目の確認と整合性チェックの結果
 - 振った番号と部品の対応（No と部品名の一覧）
 - `TBD` にした箇所
-- 設計書（`.md`）がすでにあり、番号が変わった場合は、「旧 No → 新 No」の対応表。設計書は書き換えず、`/write-screen-spec` で更新するよう伝える（そのあと `/write-screen-flow` と `/write-screen-e2e` の更新も必要になる）
+- 設計書（`.md`）がすでにあり、番号が変わった場合は、「旧 No → 新 No」の対応表。設計書は書き換えず、`/write-screen-spec` で更新するよう伝える（そのあと `/write-screen-flow` と `/write-screen-playwright-test` の更新も必要になる）
 - 次に使う skill。設計書がまだなければ `/write-screen-spec`
 
 コミットはしない。

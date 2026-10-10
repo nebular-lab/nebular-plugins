@@ -1,5 +1,5 @@
 /**
- * SCR-003 イベント詳細 の E2E テスト
+ * SCR-003 イベント詳細 の Playwright テスト
  *
  * 設計書: docs/screens/SCR-003_event-detail.md
  * ワイヤーフレーム: docs/screens/SCR-003_event-detail.html

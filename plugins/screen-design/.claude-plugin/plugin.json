@@ -1,6 +1,6 @@
 {
   "name": "screen-design",
-  "description": "会話で画面の構成と動作を決め、簡易 HTML のワイヤーフレーム、1 画面 1 ファイルの画面設計書（Markdown）、全画面で共通のルール・画面一覧・メッセージ一覧、draw.io の画面遷移図を作り、設計書から API をモックした Playwright の E2E テストを生成する skill 集。",
+  "description": "会話で画面の構成と動作を決め、簡易 HTML のワイヤーフレーム、1 画面 1 ファイルの画面設計書（Markdown）、全画面で共通のルール・画面一覧・メッセージ一覧、draw.io の画面遷移図を作り、設計書から API をモックした Playwright のテストを生成する skill 集。",
   "version": "0.1.0",
   "author": {
     "name": "nebular-lab"

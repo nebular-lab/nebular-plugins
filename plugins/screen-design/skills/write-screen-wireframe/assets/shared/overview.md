@@ -10,6 +10,6 @@
 
 ## 画面一覧
 
-| 画面 ID | 画面名 | URL | ワイヤーフレーム | 設計書 | E2E テスト |
+| 画面 ID | 画面名 | URL | ワイヤーフレーム | 設計書 | Playwright テスト |
 | --- | --- | --- | --- | --- | --- |
 | SCR-001 | ログイン | /login | [SCR-001_login.html](SCR-001_login.html) | [SCR-001_login.md](SCR-001_login.md) | - |

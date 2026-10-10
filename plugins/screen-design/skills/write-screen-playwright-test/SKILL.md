@@ -1,6 +1,6 @@
 ---
-name: write-screen-e2e
-description: 画面設計書（Markdown）とワイヤーフレーム（HTML）から、Playwright の E2E テストコードを 1 画面ずつ生成する。API はすべて page.route() でモックし、バックエンドとは通信しない。設計書のどの記述からどのテストケースを作るかを規則で決め、テスト名に出典を付けて、どんなケースがあるかを明確にする。
+name: write-screen-playwright-test
+description: 画面設計書（Markdown）とワイヤーフレーム（HTML）から、Playwright のテストコードを 1 画面ずつ生成する。API はすべて page.route() でモックし、バックエンドとは通信しない。設計書のどの記述からどのテストケースを作るかを規則で決め、テスト名に出典を付けて、どんなケースがあるかを明確にする。
 argument-hint: "[画面 ID・設計書のパス]"
 disable-model-invocation: true
 allowed-tools:
@@ -13,7 +13,7 @@ allowed-tools:
   - Agent
 ---
 
-# /write-screen-e2e — 画面の E2E テストの生成（1 画面ずつ）
+# /write-screen-playwright-test — 画面の Playwright テストの生成（1 画面ずつ）
 
 `/write-screen-spec` で書いた画面設計書と、`/write-screen-wireframe` で描いたワイヤーフレームから、Playwright のテストコードを生成する。目的は「どのテストケースを作るか」を明確にすること。設計書の記述から機械的にケースを洗い出し、テスト名の先頭に出典（設計書のどこから来たケースか）を、項目名・操作名・メッセージの文言で付けるので、テストコードを読めばケースの一覧になる。
 
@@ -27,11 +27,11 @@ allowed-tools:
 - テストケースの作り方: [references/test-case-rules.md](references/test-case-rules.md)
 - モックの補助関数: [assets/api-mock.ts](assets/api-mock.ts)
 - 漏れチェックのプロンプト: [references/coverage-check.md](references/coverage-check.md)
-- サンプル: [../../examples/e2e/](../../examples/e2e/)（`screens/SCR-002_event-edit.spec.ts` が、[../../examples/docs/screens/SCR-002_event-edit.md](../../examples/docs/screens/SCR-002_event-edit.md) から生成したもの）
+- サンプル: [../../examples/playwright-test/](../../examples/playwright-test/)（`screens/SCR-002_event-edit.spec.ts` が、[../../examples/docs/screens/SCR-002_event-edit.md](../../examples/docs/screens/SCR-002_event-edit.md) から生成したもの）
 
 ## 引数
 
-`/write-screen-e2e [画面 ID・設計書のパス]`
+`/write-screen-playwright-test [画面 ID・設計書のパス]`
 
 画面 ID がなければ、画面一覧（`overview.md` の「画面一覧」）を見せてどの画面かを聞く。
 
@@ -52,7 +52,7 @@ allowed-tools:
 3. アプリが API を呼ぶ先のベース URL を確かめる（環境変数、API クライアントの設定、OpenAPI の `servers` など）。わからなければユーザーに聞く。
    - 別のオリジンの API なら、そのオリジンとパス（例: `https://api.example.com/v1`）。
    - 画面と同じオリジンで `/api` などの相対パスで呼ぶなら、画面のオリジンとそのパス（例: `http://localhost:3000/api`）。接頭辞がなく画面と同じパスの空間で呼ぶなら、画面のオリジンだけ（例: `http://localhost:3000`）。モックは fetch / XHR だけを横取りするので、画面の HTML や JS は通る。
-   - テストでは `E2E_API_BASE_URL` で渡す前提にし、決まった値を報告に書く。
+   - テストでは `PLAYWRIGHT_TEST_API_BASE_URL` で渡す前提にし、決まった値を報告に書く。
 4. テストの置き場所を決める。`testDir` の下に `screens/`（画面のテスト）と `support/`（補助関数）を置く。
 5. `support/api-mock.ts` がなければ、[assets/api-mock.ts](assets/api-mock.ts) をコピーし、`API_BASE_URL` の既定値を 3. の値にする。すでにあれば触らない。
 
@@ -75,14 +75,14 @@ allowed-tools:
 1. 3. の骨組みの `test.fixme()` を、中身のある `test()` に置き換えていく。構成（メッセージ、テストデータ、部品、画面を開く関数、`test.use()`、`test.describe` の分け方）は [references/test-case-rules.md](references/test-case-rules.md) の「ファイルの構成」とサンプルに合わせる。
 2. 3. で合意したテスト名は変えない。最終的にも `test.fixme()` のまま残すものだけ残す。
 3. ファイルの先頭のコメントに、設計書・ワイヤーフレームのパス、出典の読み方、実装についての前提（test-case-rules.md の「実装についての前提」）を書く。
-4. 設計書の保存先の `overview.md` の「画面一覧」で、この画面の行の「E2E テスト」の列を、テストファイルへのリンクにする（`[SCR-002_event-edit.spec.ts](../../e2e/screens/SCR-002_event-edit.spec.ts)`。パスは `overview.md` から見た相対パス）。
+4. 設計書の保存先の `overview.md` の「画面一覧」で、この画面の行の「Playwright テスト」の列を、テストファイルへのリンクにする（`[SCR-002_event-edit.spec.ts](../../playwright-test/screens/SCR-002_event-edit.spec.ts)`。パスは `overview.md` から見た相対パス）。
 5. 既存のテストファイルを更新する場合は、設計書から消えたケースを削除し、増えたケースを足す。設計書の部品番号が変わっていたら、コメントの部品番号（`// No.9`）も直す。手で足されたテスト（出典のないテスト）は消さずに残し、報告で伝える。
 
 ### 5. 型チェックとテスト一覧
 
 1. 型チェックをする。`playwright test --list` は型を見ないので、必ず `tsc` を使う。
    - プロジェクトの `tsconfig.json` が、テストのファイルを含んでいれば `npx tsc --noEmit -p <tsconfig>`。
-   - 含んでいない、または `tsconfig.json` がなければ、一時的な tsconfig を `testDir` の中に作って（例: `<testDir>/tsconfig.e2e-check.json`）、`npx tsc --noEmit -p <その tsconfig>` する。プロジェクトの外に置くと、`@playwright/test` や `@types/node` を `node_modules` から見つけられず失敗するため。終わったら消す。中身は次のとおり。
+   - 含んでいない、または `tsconfig.json` がなければ、一時的な tsconfig を `testDir` の中に作って（例: `<testDir>/tsconfig.playwright-test-check.json`）、`npx tsc --noEmit -p <その tsconfig>` する。プロジェクトの外に置くと、`@playwright/test` や `@types/node` を `node_modules` から見つけられず失敗するため。終わったら消す。中身は次のとおり。
 
      ```json
      {
@@ -105,7 +105,7 @@ allowed-tools:
 - 作成・更新したファイル（テストコード、`support/api-mock.ts` をコピーしたか）
 - 分類ごとのケース数と、`test.fixme()` の一覧（理由付き）
 - 型チェックと漏れチェックの結果
-- 実行に必要なこと（アプリの起動方法、`baseURL`、`E2E_API_BASE_URL` の値）
+- 実行に必要なこと（アプリの起動方法、`baseURL`、`PLAYWRIGHT_TEST_API_BASE_URL` の値）
 - 設計書に反映したほうがよい点（期待値を決めるためにユーザーに確認したことなど）
 - 設計書を直したら、この skill をもう一度使ってテストを更新すること
 

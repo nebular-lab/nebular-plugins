@@ -1,5 +1,5 @@
 /**
- * 画面の E2E テスト用の API モック。
+ * 画面の Playwright テスト用の API モック。
  *
  * バックエンドとは通信せず、ブラウザからの API 通信（fetch / XHR）を横取りして、
  * テストごとに決めた応答を返す。
@@ -21,7 +21,7 @@
 import { test as base, expect, type BrowserContext, type Route } from '@playwright/test';
 
 /** 横取りする API のベース URL。アプリが API を呼ぶ先に合わせる（例: http://localhost:3000/api） */
-export const API_BASE_URL = process.env.E2E_API_BASE_URL ?? 'http://localhost:8080';
+export const API_BASE_URL = process.env.PLAYWRIGHT_TEST_API_BASE_URL ?? 'http://localhost:8080';
 
 export type MockReply =
   | {
@@ -77,7 +77,7 @@ export class ApiMock {
   }
 
   static async setup(context: BrowserContext, baseUrl: string = API_BASE_URL): Promise<ApiMock> {
-    if (!baseUrl) throw new Error('API のベース URL が空です。E2E_API_BASE_URL を設定してください');
+    if (!baseUrl) throw new Error('API のベース URL が空です。PLAYWRIGHT_TEST_API_BASE_URL を設定してください');
     const mock = new ApiMock(baseUrl);
     await context.route(
       (url) => mock.isApiUrl(url),

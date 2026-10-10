@@ -1,6 +1,6 @@
 ---
 name: write-screen-common-rules
-description: 全画面で共通のルール（common-rules.md）を作る・更新する。入力、react-hook-form のデフォルト設定、TanStack Query の既定の設定、表示形式、一覧、送信、遷移の決まった項目を、あらかじめ用意した選択肢（yes / no など）から選んで決める。アクセシビリティは、選択肢のない決まったルールとして書く。画面設計書・ワイヤーフレーム・E2E テストは、このルールを既定として使う。
+description: 全画面で共通のルール（common-rules.md）を作る・更新する。入力、react-hook-form のデフォルト設定、TanStack Query の既定の設定、表示形式、一覧、送信、遷移の決まった項目を、あらかじめ用意した選択肢（yes / no など）から選んで決める。アクセシビリティは、選択肢のない決まったルールとして書く。画面設計書・ワイヤーフレーム・Playwright テストは、このルールを既定として使う。
 argument-hint: "[保存先]"
 disable-model-invocation: true
 allowed-tools:
