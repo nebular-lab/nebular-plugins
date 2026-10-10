@@ -11,7 +11,7 @@
  *   [「削除」ボタン押下]                      … アクション「「削除」ボタン押下」の手順（API を呼ばない）
  *   [「編集」ボタン 表示条件]                 … 画面項目「「編集」」の表示条件
  *   [ステータス 表示形式]                     … 画面項目「ステータス」の備考
- *   [権限 member]                             … 3. 権限 の member の行
+ *   [閲覧権限 member]                             … 3. 閲覧権限 の member の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
@@ -193,7 +193,7 @@ test.describe('SCR-003 イベント詳細', () => {
     const detailPath = pathOf(draftEvent);
 
     const meOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin(detailPath) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '閲覧権限 未ログイン', expect: toLogin(detailPath) },
       { status: 500, other: true, label: `${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
     ];
     for (const o of meOutcomes) {
@@ -600,14 +600,14 @@ test.describe('SCR-003 イベント詳細', () => {
     });
   });
 
-  test.describe('権限', () => {
+  test.describe('閲覧権限', () => {
     const viewerCases = [
       { role: 'admin' as const },
       { role: 'organizer' as const },
       { role: 'member' as const },
     ];
     for (const c of viewerCases) {
-      test(`[権限 ${c.role}] ${c.role} は、公開中のイベントの詳細を開ける`, async ({ page, api }) => {
+      test(`[閲覧権限 ${c.role}] ${c.role} は、公開中のイベントの詳細を開ける`, async ({ page, api }) => {
         await open(page, api, publishedEvent, users[c.role]);
         await expect(ui(page).heading(publishedEvent.title)).toBeVisible();
         await expect(page).toHaveURL(new RegExp(`${pathOf(publishedEvent)}$`));

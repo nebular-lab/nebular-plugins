@@ -14,7 +14,7 @@
  *   [タイトル 50 文字以内]                              … バリデーションのチェック表の、タイトルの「50 文字以内」の行
  *   [定員 入力可能最大文字数]                           … 画面項目「定員」の入力可能最大文字数
  *   [「下書き保存」ボタン 表示条件]                     … 画面項目「「下書き保存」」の表示条件
- *   [権限 admin]                                        … 3. 権限 の admin の行
+ *   [閲覧権限 admin]                                        … 3. 閲覧権限 の admin の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
@@ -300,7 +300,7 @@ test.describe('SCR-002 イベント編集', () => {
 
   test.describe('API: 初期表示', () => {
     const meOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin(editPath(draftEvent)) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '閲覧権限 未ログイン', expect: toLogin(editPath(draftEvent)) },
       { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of meOutcomes) {
@@ -383,7 +383,7 @@ test.describe('SCR-002 イベント編集', () => {
         body: apiError('forbidden'),
         label: `${q(M.MSG020)}を表示し、イベント一覧へ遷移する`,
         leaves: true,
-        also: '権限 organizer（他の人のイベント）',
+        also: '閲覧権限 organizer（他の人のイベント）',
         expect: async (page) => {
           await expect(page.getByText(M.MSG020)).toBeVisible();
           await toList(page);
@@ -750,14 +750,14 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('API を呼ばない手順', () => {
-    test(`[初期表示 / member のとき / 権限 member] member が開くと ${q(M.MSG020)}を表示する`, async ({ page, api }) => {
+    test(`[初期表示 / member のとき / 閲覧権限 member] member が開くと ${q(M.MSG020)}を表示する`, async ({ page, api }) => {
       mockInitial(api, { user: users.member });
       api.allowUnmockedCalls(); // 続く手順で一覧へ遷移するため
       await page.goto(editPath(draftEvent));
       await expect(page.getByText(M.MSG020)).toBeVisible();
     });
 
-    test('[初期表示 / member のとき / 権限 member] member が開くとイベント一覧へ遷移して終了する', async ({ page, api }) => {
+    test('[初期表示 / member のとき / 閲覧権限 member] member が開くとイベント一覧へ遷移して終了する', async ({ page, api }) => {
       const { categories } = mockInitial(api, { user: users.member });
       api.allowUnmockedCalls(); // 一覧へ遷移するため
       await page.goto(editPath(draftEvent));
@@ -1233,7 +1233,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect.poll(() => put.requests.length).toBe(1);
     });
 
-    test('[「更新する」ボタン押下 / 編集不可の項目] 公開中で編集不可の開催日が今日より前でも、「更新する」でチェックしない', async ({ page, api }) => {
+    test('[「更新する」ボタン押下 / 非活性の項目] 公開中で非活性の開催日が今日より前でも、「更新する」でチェックしない', async ({ page, api }) => {
       const past = { ...publishedEvent, startDate: '2026-09-15' };
       await openEdit(page, api, past);
       const put = api.on('PUT /events/{eventId}', { status: 200, body: past });
@@ -1424,13 +1424,13 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[開催形式 編集不可条件] participantCount が 1 以上なら開催形式を選べない', async ({ page, api }) => {
+    test('[開催形式 活性条件] participantCount が 1 以上なら非活性（開催形式を選べない）', async ({ page, api }) => {
       await openEdit(page, api, { ...draftEvent, participantCount: 1 });
       await expect(ui(page).onsite).toBeDisabled();
       await expect(ui(page).online).toBeDisabled();
     });
 
-    test('[開催形式 編集不可条件] participantCount が 0 なら開催形式を選べる', async ({ page, api }) => {
+    test('[開催形式 活性条件] participantCount が 0 なら活性（開催形式を選べる）', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).onsite).toBeEnabled();
       await expect(ui(page).online).toBeEnabled();
@@ -1442,7 +1442,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 'draft' as const, disabled: false },
     ];
     for (const c of startDateCases) {
-      test(`[開催日 編集不可条件] status が ${c.status} なら開催日を${c.disabled ? '編集できない' : '編集できる'}`, async ({ page, api }) => {
+      test(`[開催日 活性条件] status が ${c.status} なら開催日は${c.disabled ? '非活性（編集できない）' : '活性（編集できる）'}`, async ({ page, api }) => {
         await openEdit(page, api, { ...draftEvent, status: c.status });
         if (c.disabled) await expect(ui(page).startDate).toBeDisabled();
         else await expect(ui(page).startDate).toBeEnabled();
@@ -1454,7 +1454,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 'published' as const, disabled: false },
     ];
     for (const c of capacityEditCases) {
-      test(`[定員 編集不可条件] status が ${c.status} なら定員を${c.disabled ? '編集できない' : '編集できる'}`, async ({ page, api }) => {
+      test(`[定員 活性条件] status が ${c.status} なら定員は${c.disabled ? '非活性（編集できない）' : '活性（編集できる）'}`, async ({ page, api }) => {
         await openEdit(page, api, { ...publishedEvent, status: c.status });
         if (c.disabled) await expect(ui(page).capacity).toBeDisabled();
         else await expect(ui(page).capacity).toBeEnabled();
@@ -1852,15 +1852,15 @@ test.describe('SCR-002 イベント編集', () => {
     }
   });
 
-  test.describe('権限', () => {
-    // member は [初期表示 / member のとき / 権限 member]、未ログインは [初期表示 / GET /me 401 / 権限 未ログイン]、
-    // organizer（他の人のイベント）は [初期表示 / GET /events/{eventId} 403 / 権限 organizer（他の人のイベント）] で確かめている
+  test.describe('閲覧権限', () => {
+    // member は [初期表示 / member のとき / 閲覧権限 member]、未ログインは [初期表示 / GET /me 401 / 閲覧権限 未ログイン]、
+    // organizer（他の人のイベント）は [初期表示 / GET /events/{eventId} 403 / 閲覧権限 organizer（他の人のイベント）] で確かめている
     const viewers = [
       { name: 'admin', user: users.admin },
       { name: 'organizer', user: users.organizer },
     ];
     for (const v of viewers) {
-      test(`[権限 ${v.name} / 初期表示 / member でないとき] ${v.name} なら、${q(M.MSG020)}を表示せず、遷移せずに画面を開ける`, async ({ page, api }) => {
+      test(`[閲覧権限 ${v.name} / 初期表示 / member でないとき] ${v.name} なら、${q(M.MSG020)}を表示せず、遷移せずに画面を開ける`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent, v.user);
         await expect(ui(page).heading('イベントを編集')).toBeVisible();
         await staysOn(page, draftEvent);

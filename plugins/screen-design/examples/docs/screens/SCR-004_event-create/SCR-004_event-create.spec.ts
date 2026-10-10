@@ -13,7 +13,7 @@
  *   [タイトル 50 文字以内]                              … バリデーションのチェック表の、タイトルの「50 文字以内」の行
  *   [定員 入力可能最大文字数]                           … 画面項目「定員」の入力可能最大文字数
  *   [「下書き保存」ボタン 活性条件]                     … 画面項目「「下書き保存」」の活性条件
- *   [権限 admin]                                        … 3. 権限 の admin の行
+ *   [閲覧権限 admin]                                        … 3. 閲覧権限 の admin の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
@@ -268,10 +268,10 @@ test.describe('SCR-004 イベント作成', () => {
   });
 
   test.describe('API: 初期表示', () => {
-    // GET /me の 200（role を保持して判定に使う）は、member なら [初期表示 / member のとき / 権限 member]、
-    // admin・organizer なら [権限 admin / 初期表示 / GET /me 200 / member でないとき] などで確かめている
+    // GET /me の 200（role を保持して判定に使う）は、member なら [初期表示 / member のとき / 閲覧権限 member]、
+    // admin・organizer なら [閲覧権限 admin / 初期表示 / GET /me 200 / member でないとき] などで確かめている
     const meOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '閲覧権限 未ログイン', expect: toLogin },
       { status: 500, other: true, label: `ヘッダー・「← 一覧へ戻る」・見出しと ${q(M.MSG022)}だけを表示し、入力項目とボタンは表示せずに終了する`, expect: showsOnlyTopError },
     ];
     for (const o of meOutcomes) {
@@ -510,14 +510,14 @@ test.describe('SCR-004 イベント作成', () => {
   });
 
   test.describe('API を呼ばない手順', () => {
-    test(`[初期表示 / member のとき / 権限 member] member が開くと ${q(M.MSG020)}を表示する`, async ({ page, api }) => {
+    test(`[初期表示 / member のとき / 閲覧権限 member] member が開くと ${q(M.MSG020)}を表示する`, async ({ page, api }) => {
       mockInitial(api, users.member);
       api.allowUnmockedCalls(); // 次の手順でイベント一覧へ遷移するため
       await page.goto(CREATE_PATH);
       await expect(page.getByText(M.MSG020)).toBeVisible();
     });
 
-    test('[初期表示 / member のとき / 権限 member] member が開くとイベント一覧へ遷移して終了する', async ({ page, api }) => {
+    test('[初期表示 / member のとき / 閲覧権限 member] member が開くとイベント一覧へ遷移して終了する', async ({ page, api }) => {
       const { categories: cat } = mockInitial(api, users.member);
       api.allowUnmockedCalls(); // イベント一覧へ遷移するため
       await page.goto(CREATE_PATH);
@@ -1334,14 +1334,14 @@ test.describe('SCR-004 イベント作成', () => {
     });
   });
 
-  test.describe('権限', () => {
-    // member は [初期表示 / member のとき / 権限 member]、未ログインは [初期表示 / GET /me 401 / 権限 未ログイン] で確かめている
+  test.describe('閲覧権限', () => {
+    // member は [初期表示 / member のとき / 閲覧権限 member]、未ログインは [初期表示 / GET /me 401 / 閲覧権限 未ログイン] で確かめている
     const viewers = [
       { name: 'admin', user: users.admin },
       { name: 'organizer', user: users.organizer },
     ];
     for (const v of viewers) {
-      test(`[権限 ${v.name} / 初期表示 / GET /me 200 / member でないとき] ${v.name} なら、${q(M.MSG020)}を表示せず、遷移せずに画面を開ける`, async ({ page, api }) => {
+      test(`[閲覧権限 ${v.name} / 初期表示 / GET /me 200 / member でないとき] ${v.name} なら、${q(M.MSG020)}を表示せず、遷移せずに画面を開ける`, async ({ page, api }) => {
         await open(page, api, v.user);
         await expect(ui(page).heading).toBeVisible();
         await stays(page);

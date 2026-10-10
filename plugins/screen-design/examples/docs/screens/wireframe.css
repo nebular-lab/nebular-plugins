@@ -120,7 +120,7 @@ button {
 }
 button.primary { background: var(--line); color: #fff; }
 
-/* 編集不可・非活性 */
+/* 非活性 */
 input:disabled, select:disabled, textarea:disabled, button:disabled {
   color: var(--muted);
   background: var(--fill);

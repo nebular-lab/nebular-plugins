@@ -19,31 +19,31 @@
 
 なし
 
-## 3. 権限
+## 3. 閲覧権限
 
-| 利用者の種類 | 閲覧 | 備考 |
-| --- | --- | --- |
-| admin | ○ | すべてのイベントを編集・削除できる |
-| organizer | ○ | 編集・削除は自分が主催のイベントだけ。他の人のイベントを開くと API が 403 を返す |
-| member | × | MSG-020 をトーストで表示して SCR-001 イベント一覧へ遷移する |
-| 未ログイン | × | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
+| 利用者の種類 | 閲覧 |
+| --- | --- |
+| admin | ○ |
+| organizer | ○ |
+| member | × |
+| 未ログイン | × |
 
 ## 4. 画面項目
 
 ### 入力項目
 
-| No | 項目名 | タグ | 入力可能文字種 | 入力可能最大文字数 | 初期値 | プレースホルダー | 編集不可条件 | 備考 |
+| No | 項目名 | タグ | 入力可能文字種 | 入力可能最大文字数 | 初期値 | プレースホルダー | 活性条件 | 備考 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 12 | タイトル | `input（type="text"）` | - | - | `GET /events/{eventId}` の `title` | 「例: はじめての TypeScript ハンズオン」 | - | - |
-| 15 | 概要 | `textarea` | - | - | `GET /events/{eventId}` の `summary` | 「イベントの内容を 200 文字以内で入力」 | - | - |
-| 18 | カテゴリ | `select` | - | - | `GET /events/{eventId}` の `categoryId` | - | - | - |
-| 21 | 開催形式 | `input（type="radio"）` | - | - | `GET /events/{eventId}` の `format` | - | `GET /events/{eventId}` の `participantCount` が 1 以上のとき | 選択肢は固定値。「会場」は `onsite`、「オンライン」は `online` |
-| 25 | 会場名 | `input（type="text"）` | - | - | `GET /events/{eventId}` の `venueName` | 「例: 渋谷オフィス 5F セミナールーム」 | - | 表示条件: No.21 で「会場」を選んでいるとき |
-| 28 | 配信 URL | `input（type="url"）` | - | - | `GET /events/{eventId}` の `onlineUrl` | 「https://」 | - | 表示条件: No.21 で「オンライン」を選んでいるとき |
-| 31 | 開催日 | `input（type="date"）` | - | - | `GET /events/{eventId}` の `startDate` | - | `GET /events/{eventId}` の `status` が `published` か `closed` のとき | - |
-| 34 | 定員 | `input（type="number"）` | 半角数字 | 3 | `GET /events/{eventId}` の `capacity` | 「1〜999」 | `GET /events/{eventId}` の `status` が `closed` のとき | 全角数字は入力中に半角へ変換する |
-| 37 | タグ | `input（type="checkbox"）` | - | - | `GET /events/{eventId}` の `tags` | - | - | 選択肢は固定値。「初心者向け」は `beginner`、「ハンズオン」は `hands-on`、「交流」は `networking`、「無料」は `free`、「英語」は `english` |
-| 44 | 参加者への通知 | `input（type="checkbox"）` | - | - | 未選択 | - | - | 表示条件: `GET /events/{eventId}` の `status` が `published` のとき |
+| 12 | タイトル | `input（type="text"）` | - | - | `GET /events/{eventId}` の `title` | 「例: はじめての TypeScript ハンズオン」 | 常に活性 | - |
+| 15 | 概要 | `textarea` | - | - | `GET /events/{eventId}` の `summary` | 「イベントの内容を 200 文字以内で入力」 | 常に活性 | - |
+| 18 | カテゴリ | `select` | - | - | `GET /events/{eventId}` の `categoryId` | - | 常に活性 | - |
+| 21 | 開催形式 | `input（type="radio"）` | - | - | `GET /events/{eventId}` の `format` | - | `GET /events/{eventId}` の `participantCount` が 0 のとき | 選択肢は固定値。「会場」は `onsite`、「オンライン」は `online` |
+| 25 | 会場名 | `input（type="text"）` | - | - | `GET /events/{eventId}` の `venueName` | 「例: 渋谷オフィス 5F セミナールーム」 | 常に活性 | 表示条件: No.21 で「会場」を選んでいるとき |
+| 28 | 配信 URL | `input（type="url"）` | - | - | `GET /events/{eventId}` の `onlineUrl` | 「https://」 | 常に活性 | 表示条件: No.21 で「オンライン」を選んでいるとき |
+| 31 | 開催日 | `input（type="date"）` | - | - | `GET /events/{eventId}` の `startDate` | - | `GET /events/{eventId}` の `status` が `draft` のとき | - |
+| 34 | 定員 | `input（type="number"）` | 半角数字 | 3 | `GET /events/{eventId}` の `capacity` | 「1〜999」 | `GET /events/{eventId}` の `status` が `draft` か `published` のとき | 全角数字は入力中に半角へ変換する |
+| 37 | タグ | `input（type="checkbox"）` | - | - | `GET /events/{eventId}` の `tags` | - | 常に活性 | 選択肢は固定値。「初心者向け」は `beginner`、「ハンズオン」は `hands-on`、「交流」は `networking`、「無料」は `free`、「英語」は `english` |
+| 44 | 参加者への通知 | `input（type="checkbox"）` | - | - | 未選択 | - | 常に活性 | 表示条件: `GET /events/{eventId}` の `status` が `published` のとき |
 
 ### ボタン・リンク
 
@@ -157,22 +157,22 @@
 
 ### アクション一覧
 
-| ID | 操作 | 対象 | 概要 |
-| --- | --- | --- | --- |
-| A1 | メニューのボタン押下 | No.2 | 全画面で共通のメニューを開く |
-| A2 | 「← 一覧へ戻る」リンク押下 | No.5 | 未保存の変更があれば離脱の確認を表示し、なければイベント一覧へ戻る |
-| A3 | No.12 からフォーカスが外れる | No.12 | タイトルのバリデーションをする |
-| A4 | 開催形式の選択を変更 | No.21 | 会場名と配信 URL の表示を切り替える |
-| A5 | No.34 に入力 | No.34 | 定員のバリデーションをする |
-| A6 | タグの選択を変更 | No.37 | 4 つ目を選べないようにする |
-| A7 | 「下書き保存」ボタン押下 | No.45 | 下書きとして保存する |
-| A8 | 「公開する」／「更新する」ボタン押下 | No.46 | 公開する、または公開中の内容を更新する |
-| A9 | 「削除」ボタン押下 | No.47 | 削除の確認を表示する |
-| A10 | 削除の確認で「キャンセル」ボタン押下 | No.51 | 削除の確認を閉じる |
-| A11 | 削除の確認で「削除する」ボタン押下 | No.52 | イベントを削除する |
-| A12 | 離脱の確認で「キャンセル」ボタン押下 | No.55 | 離脱の確認を閉じる |
-| A13 | 離脱の確認で「離れる」ボタン押下 | No.56 | 保存せずにイベント一覧へ戻る |
-| A14 | ブラウザの戻る・再読み込み・タブを閉じる | - | 未保存の変更があれば離脱を確認する |
+| ID | 操作 | 対象 |
+| --- | --- | --- |
+| A1 | メニューのボタン押下 | No.2 |
+| A2 | 「← 一覧へ戻る」リンク押下 | No.5 |
+| A3 | No.12 からフォーカスが外れる | No.12 |
+| A4 | 開催形式の選択を変更 | No.21 |
+| A5 | No.34 に入力 | No.34 |
+| A6 | タグの選択を変更 | No.37 |
+| A7 | 「下書き保存」ボタン押下 | No.45 |
+| A8 | 「公開する」／「更新する」ボタン押下 | No.46 |
+| A9 | 「削除」ボタン押下 | No.47 |
+| A10 | 削除の確認で「キャンセル」ボタン押下 | No.51 |
+| A11 | 削除の確認で「削除する」ボタン押下 | No.52 |
+| A12 | 離脱の確認で「キャンセル」ボタン押下 | No.55 |
+| A13 | 離脱の確認で「離れる」ボタン押下 | No.56 |
+| A14 | ブラウザの戻る・再読み込み・タブを閉じる | - |
 
 ### A1. メニューのボタン押下
 

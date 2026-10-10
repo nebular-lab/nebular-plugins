@@ -15,7 +15,7 @@
  *   [クエリパラメータ status 省略]                   … 2. クエリパラメータ の status を省略したとき
  *   [Enter キーで動くボタン]                         … 冒頭の表の「Enter キーで動くボタン」
  *   [「次へ」ボタン 活性条件]                        … 画面項目「「次へ」」の活性条件
- *   [権限 member]                                    … 3. 権限 の member の行
+ *   [閲覧権限 member]                                    … 3. 閲覧権限 の member の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
@@ -277,7 +277,7 @@ test.describe('SCR-001 イベント一覧', () => {
 
     // GET /me の 200 で保持した role を表示条件の判定に使うことは、[「イベントを作成」ボタン 表示条件]、[ステータスのタブ 表示条件] で確かめている
     const meOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面（redirect は現在の URL）へ遷移する', leaves: true, query: LOGIN_FROM_QUERY, also: '権限 未ログイン', expect: toLogin(LOGIN_FROM_QUERY) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面（redirect は現在の URL）へ遷移する', leaves: true, query: LOGIN_FROM_QUERY, also: '閲覧権限 未ログイン', expect: toLogin(LOGIN_FROM_QUERY) },
       { status: 500, other: true, label: `${q(M.MSG023)}を表示して終了する`, expect: shows(M.MSG023) },
     ];
     for (const o of meOutcomes) {
@@ -1083,7 +1083,7 @@ test.describe('SCR-001 イベント一覧', () => {
     const roleCases = [
       { role: 'admin' as const, visible: true, also: '' },
       { role: 'organizer' as const, visible: true, also: '' },
-      { role: 'member' as const, visible: false, also: ' / 権限 member' },
+      { role: 'member' as const, visible: false, also: ' / 閲覧権限 member' },
     ];
     for (const c of roleCases) {
       test(`[「イベントを作成」ボタン 表示条件${c.also}] role が ${c.role} なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
@@ -1388,16 +1388,16 @@ test.describe('SCR-001 イベント一覧', () => {
     test.fixme('[ヘルプのリンク押下] ヘルプを別タブで開く（TBD: ヘルプのリンクの遷移先 URL はどこか）', async () => {});
   });
 
-  test.describe('権限', () => {
-    // member の備考（「イベントを作成」と「下書き」タブは表示しない）は [「イベントを作成」ボタン 表示条件 / 権限 member]、[ステータスのタブ 表示条件 / 権限 member] で、
-    // 未ログインは [初期表示 / GET /me 401 / 権限 未ログイン] で確かめている
+  test.describe('閲覧権限', () => {
+    // member の備考（「イベントを作成」と「下書き」タブは表示しない）は [「イベントを作成」ボタン 表示条件 / 閲覧権限 member]、[ステータスのタブ 表示条件 / 閲覧権限 member] で、
+    // 未ログインは [初期表示 / GET /me 401 / 閲覧権限 未ログイン] で確かめている
     const viewerCases = [
       { role: 'admin' as const },
       { role: 'organizer' as const },
       { role: 'member' as const },
     ];
     for (const c of viewerCases) {
-      test(`[権限 ${c.role}] ${c.role} は、イベント一覧を開ける`, async ({ page, api }) => {
+      test(`[閲覧権限 ${c.role}] ${c.role} は、イベント一覧を開ける`, async ({ page, api }) => {
         await open(page, api, { user: users[c.role], list: publishedOnlyList });
         await expect(ui(page).heading).toBeVisible();
         await stays(page);
