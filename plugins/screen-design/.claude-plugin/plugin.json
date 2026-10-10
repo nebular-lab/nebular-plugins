@@ -1,6 +1,6 @@
 {
   "name": "screen-design",
-  "description": "会話で画面の構成と動作を決め、簡易 HTML のワイヤーフレーム、1 画面 1 ファイルの画面設計書（Markdown）、全画面で共通のルール・画面一覧・メッセージ一覧、draw.io の画面遷移図を作り、設計書から API をモックした Playwright のテストを生成する skill 集。",
+  "description": "画面の設計書を、会話しながら決まった形で作る skill 集。全画面で共通のルール、簡易 HTML のワイヤーフレーム、1 画面 1 ファイルの画面設計書（Markdown）、draw.io の画面遷移図を作り、設計書から API をモックした Playwright のテストを生成する。使う順番は、/write-screen-common-rules（共通ルール）→ /write-screen-wireframe（ワイヤーフレーム）→ /write-screen-spec（画面設計書）→ /write-screen-flow（画面遷移図）と /write-screen-playwright-test（Playwright テスト）。",
   "version": "0.1.0",
   "author": {
     "name": "nebular-lab"
