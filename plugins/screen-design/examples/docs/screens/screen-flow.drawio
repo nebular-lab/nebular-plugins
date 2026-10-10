@@ -1,70 +1,112 @@
-<mxfile host="app.diagrams.net">
-  <diagram id="screen-flow" name="画面遷移図">
-    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="note-hidden" value="図に描いていない遷移&lt;br&gt;・どの画面でも、API が 401 を返したら → ログイン（/login）&lt;br&gt;・SCR-002 イベント編集: 権限がないとき、イベントが見つからないとき → SCR-001 イベント一覧" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="40" y="30" width="640" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="ext-online" value="オンライン会場&lt;br&gt;イベントの配信 URL" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="40" y="330" width="220" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="ext-help" value="ヘルプ&lt;br&gt;URL は TBD" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
-          <mxGeometry x="40" y="390" width="220" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-001" value="SCR-001 イベント一覧&lt;br&gt;/events" style="swimlane;whiteSpace=wrap;html=1;startSize=60;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="340" y="140" width="240" height="340" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-001-no-4" value="「イベントを作成」" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="scr-001">
-          <mxGeometry x="30" y="80" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-001-no-11" value="タイトル" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" vertex="1" parent="scr-001">
-          <mxGeometry x="30" y="140" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-001-no-15" value="「オンライン会場」" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" vertex="1" parent="scr-001">
-          <mxGeometry x="30" y="200" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-001-no-21" value="「ヘルプ」" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" vertex="1" parent="scr-001">
-          <mxGeometry x="30" y="260" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-002" value="SCR-002 イベント編集&lt;br&gt;/events/new&lt;br&gt;/events/{eventId}/edit" style="swimlane;whiteSpace=wrap;html=1;startSize=60;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="820" y="140" width="240" height="340" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-002-no-2" value="「← 一覧へ戻る」" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" vertex="1" parent="scr-002">
-          <mxGeometry x="30" y="80" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-002-no-26" value="「公開する」／「更新する」" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="scr-002">
-          <mxGeometry x="30" y="140" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="scr-002-no-27" value="「削除」" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" vertex="1" parent="scr-002">
-          <mxGeometry x="30" y="200" width="180" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="note-legend" value="凡例&lt;br&gt;・水色の枠: 画面。枠の中は、別の画面へ移るきっかけ（角丸: ボタン、下線: リンク）&lt;br&gt;・灰色の点線: 外部・設計書のない画面。点線の矢印: 別タブで開く&lt;br&gt;・処理・条件・確認ダイアログは描いていない（画面設計書のアクションを見る）" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="40" y="520" width="640" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-001-no-4-scr-002" value="新規作成" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.257;entryDx=0;entryDy=0;" edge="1" parent="1" source="scr-001-no-4" target="scr-002">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-001-no-11-scr-002" value="編集" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.434;entryDx=0;entryDy=0;" edge="1" parent="1" source="scr-001-no-11" target="scr-002">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-001-no-15-ext-online" value="別タブ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="scr-001-no-15" target="ext-online">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-001-no-21-ext-help" value="別タブ" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="scr-001-no-21" target="ext-help">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-002-no-2-scr-001" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.301;entryDx=0;entryDy=0;" edge="1" parent="1" source="scr-002-no-2" target="scr-001">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-002-no-26-scr-001" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.478;entryDx=0;entryDy=0;" edge="1" parent="1" source="scr-002-no-26" target="scr-001">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e-scr-002-no-27-scr-001" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.654;entryDx=0;entryDy=0;" edge="1" parent="1" source="scr-002-no-27" target="scr-001">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="screen-flow" name="画面遷移図">
+        <mxGraphModel dx="545" dy="845" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="note-hidden" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;strokeColor=#999999;" value="図に描いていない遷移&lt;br&gt;・どの画面でも、API が 401 を返したら → ログイン（/login）&lt;br&gt;・SCR-002 イベント編集: 権限がないとき、イベントが見つからないとき → SCR-001 イベント一覧&lt;br&gt;・SCR-003 イベント詳細: 表示する権限がないとき、イベントが見つからないとき → SCR-001 イベント一覧" vertex="1">
+                    <mxGeometry height="100" width="640" x="40" y="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext-online" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="オンライン会場&lt;br&gt;イベントの配信 URL" vertex="1">
+                    <mxGeometry height="50" width="220" x="40" y="330" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext-help" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="ヘルプ&lt;br&gt;URL は TBD" vertex="1">
+                    <mxGeometry height="50" width="220" x="40" y="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-001" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=60;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="SCR-001 イベント一覧&lt;br&gt;/events" vertex="1">
+                    <mxGeometry height="340" width="240" x="340" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-001-no-4" parent="scr-001" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="「イベントを作成」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-001-no-17" parent="scr-001" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" value="タイトル" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-001-no-21" parent="scr-001" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" value="「オンライン会場」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-001-no-27" parent="scr-001" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" value="「ヘルプ」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-002" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=60;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="SCR-002 イベント編集&lt;br&gt;/events/new&lt;br&gt;/events/{eventId}/edit" vertex="1">
+                    <mxGeometry height="340" width="240" x="820" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-002-no-2" parent="scr-002" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" value="「← 一覧へ戻る」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-002-no-36" parent="scr-002" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="「公開する」／「更新する」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-002-no-37" parent="scr-002" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="「削除」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-003" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=60;collapsible=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="SCR-003 イベント詳細&lt;br&gt;/events/{eventId}" vertex="1">
+                    <mxGeometry height="340" width="240" x="1300" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-003-no-2" parent="scr-003" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontStyle=4;" value="「← 一覧へ戻る」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-003-no-21" parent="scr-003" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="「編集」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="scr-003-no-22" parent="scr-003" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;" value="「削除」" vertex="1">
+                    <mxGeometry height="30" width="180" x="30" y="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="note-legend" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;strokeColor=#999999;" value="凡例&lt;br&gt;・水色の枠: 画面。枠の中は、別の画面へ移るきっかけ（角丸: ボタン、下線: リンク）&lt;br&gt;・灰色の点線: 外部・設計書のない画面。点線の矢印: 別タブで開く&lt;br&gt;・処理・条件・確認ダイアログは描いていない（画面設計書のアクションを見る）" vertex="1">
+                    <mxGeometry height="90" width="640" x="40" y="570" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-001-no-4-scr-002" edge="1" parent="1" source="scr-001-no-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.257;entryDx=0;entryDy=0;" target="scr-002" value="新規作成">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-001-no-21-ext-online" edge="1" parent="1" source="scr-001-no-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" target="ext-online" value="別タブ">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-001-no-27-ext-help" edge="1" parent="1" source="scr-001-no-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" target="ext-help" value="別タブ">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-002-no-2-scr-001" edge="1" parent="1" source="scr-002-no-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.301;entryDx=0;entryDy=0;" target="scr-001" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-002-no-36-scr-001" edge="1" parent="1" source="scr-002-no-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.478;entryDx=0;entryDy=0;" target="scr-001" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-002-no-37-scr-001" edge="1" parent="1" source="scr-002-no-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.654;entryDx=0;entryDy=0;" target="scr-001" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-001-no-17-scr-003" edge="1" parent="1" source="scr-001-no-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.06;entryDx=0;entryDy=0;" target="scr-003" value="">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="700" y="287.5"/>
+                            <mxPoint x="700" y="125"/>
+                            <mxPoint x="1180" y="125"/>
+                            <mxPoint x="1180" y="160"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-scr-003-no-2-scr-001" edge="1" parent="1" source="scr-003-no-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.95;entryDx=0;entryDy=0;" target="scr-001" value="">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1140" y="242.5"/>
+                            <mxPoint x="1140" y="530"/>
+                            <mxPoint x="640" y="530"/>
+                            <mxPoint x="640" y="463"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e-scr-003-no-21-scr-002" edge="1" parent="1" source="scr-003-no-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.478;entryDx=0;entryDy=0;" target="scr-002" value="編集">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-scr-003-no-22-scr-001" edge="1" parent="1" source="scr-003-no-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.9;entryDx=0;entryDy=0;" target="scr-001" value="">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1220" y="362.5"/>
+                            <mxPoint x="1220" y="510"/>
+                            <mxPoint x="660" y="510"/>
+                            <mxPoint x="660" y="446"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

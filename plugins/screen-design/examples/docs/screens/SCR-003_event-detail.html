@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>SCR-003 イベント詳細</title>
+  <link rel="stylesheet" href="wireframe.css">
+</head>
+<body>
+
+  <section class="screen" data-title="通常（主催者が公開中を表示）">
+    <header class="row between" data-no="1">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+
+    <a data-no="2">← 一覧へ戻る</a>
+
+    <p class="error" data-no="3">通信に失敗しました。時間をおいてもう一度お試しください</p>
+
+    <div class="row between">
+      <h1 data-no="4">はじめての TypeScript ハンズオン</h1>
+      <span class="box" data-no="5">公開中</span>
+    </div>
+
+    <div class="row"><small data-no="6">主催</small><small data-no="7">山田 花子</small></div>
+
+    <p data-no="8">型の基本を手を動かして学ぶ</p>
+
+    <table>
+      <tr><th data-no="9">カテゴリ</th><td data-no="10">勉強会</td></tr>
+      <tr><th data-no="11">開催形式</th><td data-no="12">オンライン</td></tr>
+      <tr><th data-no="13">会場</th><td data-no="14">https://meet.example.com/ts-handson</td></tr>
+      <tr><th data-no="15">開催日</th><td data-no="16">2026/10/12</td></tr>
+      <tr><th data-no="17">参加者</th><td data-no="18">18 / 30 人</td></tr>
+      <tr><th data-no="19">タグ</th><td data-no="20">初心者向け、ハンズオン</td></tr>
+    </table>
+
+    <div class="spacer"></div>
+
+    <button class="primary" data-no="21">編集</button>
+    <button data-no="22" disabled>削除</button>
+  </section>
+
+  <section class="screen" data-title="読み込み中">
+    <header class="row between">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+    <a>← 一覧へ戻る</a>
+    <div class="note" data-no="23">読み込み中（内容の位置にスピナーを表示）</div>
+  </section>
+
+  <section class="screen" data-title="削除の確認">
+    <header class="row between">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+    <h1>エンジニア交流会 秋</h1>
+    <div class="modal">
+      <div class="dialog" data-no="24">
+        <h2>イベントを削除しますか？</h2>
+        <p>「エンジニア交流会 秋」を削除します。この操作は取り消せません。</p>
+        <div class="cols-2">
+          <button data-no="25">キャンセル</button>
+          <button class="primary" data-no="26">削除する</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

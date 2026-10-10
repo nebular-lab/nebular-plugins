@@ -61,7 +61,7 @@ Claude Code で次を実行する。
 
 ### サンプル
 
-イベント管理の 2 画面（一覧、編集）で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
+イベント管理の 3 画面（一覧、編集、詳細）で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
 
 - [docs/screens/](plugins/screen-design/examples/docs/screens/): 画面設計書、ワイヤーフレーム、共有ファイル、画面遷移図
 - [docs/api/openapi.yaml](plugins/screen-design/examples/docs/api/openapi.yaml): API 定義
