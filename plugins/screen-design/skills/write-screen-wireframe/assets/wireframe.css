@@ -33,13 +33,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  width: 375px;
-  min-height: 667px;
+  width: 1024px; /* PC 表示の前提 */
+  min-height: 640px;
   padding: 16px;
   background: #fff;
   border: 2px solid var(--line);
 }
-.screen.pc { width: 1024px; min-height: 640px; }
 
 /* 状態名（通常・エラーなど）を枠の上に出す */
 .screen[data-title]::after {
@@ -97,7 +96,7 @@ a { color: inherit; text-decoration: underline; }
 
 /* ---- 入力 ---- */
 
-label.field { display: flex; flex-direction: column; gap: 4px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
 label.check { display: flex; gap: 6px; align-items: center; }
 
 input, select, textarea {

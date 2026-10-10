@@ -144,26 +144,29 @@ const ui = (page: Page) => {
   return {
     back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
     heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.3
-    organizer: page.getByText(/^主催: /), // No.5
-    title: page.getByLabel(/^タイトル/), // No.7
-    summary: page.getByLabel(/^概要/), // No.9
-    category: page.getByLabel(/^カテゴリ/), // No.11
-    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.13
-    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.13
-    venue: page.getByLabel(/^会場名/), // No.14
-    onlineUrl: page.getByLabel(/^配信 URL/), // No.16
-    startDate: page.getByLabel(/^開催日/), // No.18
-    capacity: page.getByLabel(/^定員/), // No.20
-    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.22
-    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.24
-    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.25
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.26（新規・下書き）
-    update: page.getByRole('button', { name: '更新する', exact: true }), // No.26（公開中・終了）
-    del: page.getByRole('button', { name: '削除', exact: true }), // No.27
-    dialog, // No.28（削除の確認）、No.31（離脱の確認）。同時には 1 つしか表示されない
-    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.29、No.32
-    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.30
-    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.33
+    /** 主催者の見出し（No.5）。見出しとデータは別の部品 */
+    organizerLabel: page.getByText('主催', { exact: true }),
+    /** 主催者（No.6）。文言で特定する */
+    organizer: (name: string) => page.getByText(name, { exact: true }),
+    title: page.getByLabel(/^タイトル/), // No.9
+    summary: page.getByLabel(/^概要/), // No.12
+    category: page.getByLabel(/^カテゴリ/), // No.15
+    onsite: page.getByRole('radio', { name: '会場', exact: true }), // No.18
+    online: page.getByRole('radio', { name: 'オンライン', exact: true }), // No.18
+    venue: page.getByLabel(/^会場名/), // No.20
+    onlineUrl: page.getByLabel(/^配信 URL/), // No.23
+    startDate: page.getByLabel(/^開催日/), // No.26
+    capacity: page.getByLabel(/^定員/), // No.29
+    tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.32
+    notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.34
+    draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.35
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.36（新規・下書き）
+    update: page.getByRole('button', { name: '更新する', exact: true }), // No.36（公開中・終了）
+    del: page.getByRole('button', { name: '削除', exact: true }), // No.37
+    dialog, // No.38（削除の確認）、No.41（離脱の確認）。同時には 1 つしか表示されない
+    dialogCancel: dialog.getByRole('button', { name: 'キャンセル', exact: true }), // No.39、No.42
+    dialogDelete: dialog.getByRole('button', { name: '削除する', exact: true }), // No.40
+    dialogLeave: dialog.getByRole('button', { name: '離れる', exact: true }), // No.43
   };
 };
 
@@ -270,7 +273,7 @@ const shows422 = async (page: Page) => {
 
 // ---- テスト -----------------------------------------------------------------
 
-test.use({ timezoneId: 'Asia/Tokyo', viewport: { width: 375, height: 667 } });
+test.use({ timezoneId: 'Asia/Tokyo', viewport: { width: 1280, height: 720 } });
 
 test.describe('SCR-002 イベント編集', () => {
   test.beforeEach(async ({ page }) => {
@@ -332,7 +335,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.startDate).toHaveValue('');
       await expect(u.capacity).toHaveValue('');
       for (const tag of ['初心者向け', 'ハンズオン', '交流', '無料', '英語']) await expect(u.tag(tag)).not.toBeChecked();
-      await u.online.check(); // No.16 は「オンライン」のときだけ表示される
+      await u.online.check(); // No.23 は「オンライン」のときだけ表示される
       await expect(u.onlineUrl).toHaveValue('');
       // 新規作成では GET /events/{eventId} を呼ばない（手順 9 で終了する）
       expect(event.requests).toHaveLength(0);
@@ -370,7 +373,7 @@ test.describe('SCR-002 イベント編集', () => {
     test('[初期表示 / GET /events/{eventId} 200] status をステータスに、organizerName を主催者に表示する', async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
       await expect(page.getByText('公開中', { exact: true })).toBeVisible();
-      await expect(ui(page).organizer).toHaveText('主催: 山田 花子');
+      await expect(ui(page).organizer('山田 花子')).toBeVisible();
     });
 
     const eventOutcomes: Outcome[] = [
@@ -1337,7 +1340,7 @@ test.describe('SCR-002 イベント編集', () => {
       { name: '編集', title: 'イベントを編集', event: draftEvent as Event | undefined },
     ];
     for (const c of titleCases) {
-      test(`[タイトル（${c.name}）] ${c.name}で開くと、ページのタイトルを「${c.title}」にする`, async ({ page, api }) => {
+      test(`[document.title（${c.name}）] ${c.name}で開くと、ページのタイトルを「${c.title}」にする`, async ({ page, api }) => {
         if (c.event) await openEdit(page, api, c.event);
         else await openNew(page, api);
         await expect(page).toHaveTitle(c.title);
@@ -1445,25 +1448,26 @@ test.describe('SCR-002 イベント編集', () => {
       for (const s of statusLabels) await expect(page.getByText(s.label, { exact: true })).toHaveCount(0);
     });
 
-    test('[主催者 表示条件] 編集なら「主催: {organizerName}」を表示する', async ({ page, api }) => {
+    test('[主催者の見出し 表示条件 / 主催者 表示条件] 編集なら、見出しの「主催」と organizerName を表示する', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
-      await expect(ui(page).organizer).toHaveText(`主催: ${draftEvent.organizerName}`);
+      await expect(ui(page).organizerLabel).toBeVisible();
+      await expect(ui(page).organizer(draftEvent.organizerName)).toBeVisible();
     });
 
-    test('[主催者 表示条件] 新規作成では表示しない', async ({ page, api }) => {
+    test('[主催者の見出し 表示条件 / 主催者 表示条件] 新規作成では、見出しの「主催」を表示しない', async ({ page, api }) => {
       await openNew(page, api);
-      await expect(ui(page).organizer).toHaveCount(0);
+      await expect(ui(page).organizerLabel).toBeHidden();
     });
 
     test('[主催者 省略表記 境目] organizerName が 30 文字ちょうどなら省略しない', async ({ page, api }) => {
       const name = 'あ'.repeat(30);
       await openEdit(page, api, { ...draftEvent, organizerName: name });
-      await expect(ui(page).organizer).toHaveText(`主催: ${name}`);
+      await expect(ui(page).organizer(name)).toBeVisible();
     });
 
     test('[主催者 省略表記] organizerName が 31 文字なら、先頭 30 文字のあとに…を付ける', async ({ page, api }) => {
       await openEdit(page, api, { ...draftEvent, organizerName: 'あ'.repeat(31) });
-      await expect(ui(page).organizer).toHaveText(`主催: ${'あ'.repeat(30)}…`);
+      await expect(ui(page).organizer(`${'あ'.repeat(30)}…`)).toBeVisible();
     });
 
     const placeholderCases = [
@@ -1476,7 +1480,7 @@ test.describe('SCR-002 イベント編集', () => {
     for (const c of placeholderCases) {
       test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
         await openNew(page, api);
-        if ('online' in c) await ui(page).online.check(); // No.16 は「オンライン」のときだけ表示される
+        if ('online' in c) await ui(page).online.check(); // No.23 は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
     }

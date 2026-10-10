@@ -2,6 +2,10 @@
 
 ワイヤーフレームは「何が、どの順に、どこに並ぶか」を示す図。見た目の作り込みはせず、共通の `wireframe.css` の範囲で描く。誰が描いても同じ見た目になるように、使える要素とクラスを決めておく。
 
+## 前提
+
+ワイヤーフレームは、すべて PC 表示の前提で描く。スマホ向けの幅の枠は用意していない。
+
 ## ファイル
 
 - 1 画面 1 ファイル。保存先（既定は `docs/screens/`）の `SCR-NNN_<slug>.html`。ID と slug は設計書（`.md`）と同じにする。
@@ -26,7 +30,7 @@ HTML の要素はそのまま使ってよい。フォームの部品は本物の
 
 | 用途 | 書き方 |
 | --- | --- |
-| 画面の枠 | `<section class="screen" data-title="状態名">`。PC 画面は `class="screen pc"` |
+| 画面の枠 | `<section class="screen" data-title="状態名">`。PC 表示の前提で、幅 1024px の枠になる |
 | 領域 | `<header>`、`<footer>`、`<nav>`、`<aside>`、その他のまとまりは `<div class="box">` |
 | 横並び | `.row`（両端寄せは `.row.between`）。伸ばしたい子に `.grow` |
 | 均等な列 | `.cols-2`、`.cols-3`、`.cols-4` |
@@ -34,10 +38,10 @@ HTML の要素はそのまま使ってよい。フォームの部品は本物の
 | 下に寄せる | 手前に `<div class="spacer"></div>` |
 | 見出し・文 | `<h1>`〜`<h3>`、`<p>`、`<strong>`、`<small>`、補足は `.muted` |
 | リンク | `<a>`（`href` は付けない） |
-| 入力欄 | `<label class="field">ラベル<input ...></label>`。`type` は text、email、password、number、date、search など実際に近いもの |
-| 複数行入力 | `<label class="field">ラベル<textarea></textarea></label>` |
-| 選択 | `<label class="field">ラベル<select><option>…</option></select></label>` |
-| チェック・ラジオ | `<label class="check"><input type="checkbox">ラベル</label>` |
+| 入力欄 | `<div class="field"><label>見出し</label><div><input ...></div></div>`。見出しの `label` と、入力欄を包む `div` を分ける（それぞれに番号を振るため）。`type` は text、email、password、number、date、search など実際に近いもの |
+| 複数行入力 | `<div class="field"><label>見出し</label><div><textarea></textarea></div></div>` |
+| 選択 | `<div class="field"><label>見出し</label><div><select><option>…</option></select></div></div>` |
+| チェック・ラジオ | 選択肢 1 つは `<label class="check"><input type="checkbox">選択肢の文言</label>`。複数の選択肢をまとめるときは `<div class="stack"><span>見出し</span><div class="row">選択肢…</div></div>`（見出しの `span` と、選択肢を包む `div` を分ける） |
 | ボタン | `<button>`、主ボタンは `<button class="primary">` |
 | 画像 | `<div class="image">画像の説明</div>`。一覧の小さい画像は `.image.thumb` |
 | アイコン | `<span class="icon">記号 1 文字</span>`（例: ≡、人、×、←） |
@@ -45,7 +49,7 @@ HTML の要素はそのまま使ってよい。フォームの部品は本物の
 | 表 | `<table>`、`<th>`、`<td>` |
 | タブ | `<div class="tabs"><span class="active">…</span><span>…</span></div>` |
 | 言葉での説明 | `<div class="note">…</div>` |
-| エラー表示 | 入力項目のエラーは、入力欄の `label` の中、入力欄の後ろに `<small class="error" data-no="8">文言の例</small>`。画面上部などに出すエラーは `<p class="error" data-no="6">文言の例</p>`。点線の枠で表示される |
+| エラー表示 | 入力項目のエラーは、`.field` の中、入力欄を包む `div` の後ろに `<small class="error" data-no="9">文言の例</small>`。画面上部などに出すエラーは `<p class="error" data-no="7">文言の例</p>`。点線の枠で表示される |
 | モーダル・確認ダイアログ | `<div class="modal"><div class="dialog">…</div></div>`。`.screen` の中に置く |
 
 ## 部品番号
@@ -54,11 +58,14 @@ HTML の要素はそのまま使ってよい。フォームの部品は本物の
 
 - 番号を振る要素に `data-no="3"` を付けると、左上に赤い番号が出る。
 - 振り順は、画面の上から下、同じ高さなら左から右。
-- `input` や `select` には番号が表示されないので、包んでいる `label` に付ける。
+- `input` や `select` には番号が表示されないので、それを包んでいる `div` に付ける。
+- フォームでは、見出し（項目名）と入力欄に、別々の番号を振る。見出しが先、入力欄が次、エラー表示がその次（例: `<label data-no="8">タイトル（必須）</label><div data-no="9"><input type="text"></div><small class="error" data-no="10">…</small>`）。ラジオやチェックボックスをまとめた項目も、見出しと、選択肢を包む `div` に分けて振る。見出しを持たないチェックボックス 1 つ（文言がそのまま選択肢のもの）は、1 つの部品のままにする。
 - 番号は 1 から始まる整数の通し番号だけを使う。`5-1` のような枝番は使わない。
 - 入れ子の部品も通し番号で振る。まとまり（一覧、ヘッダーなど）に番号を振ったら、その中の部品には続きの番号を振る（例: 一覧が 8 なら、1 行目のタイトルは 9、ステータスは 10）。
 - 繰り返す部品（一覧の行など）は、1 行目の中の部品にだけ番号を振る。2 行目以降には振らない。
 - モーダルと確認ダイアログは `.modal` ではなく `.dialog` に番号を振り、中のボタンに続きの番号を振る。
+- 項目名（見出しやラベル）とデータを並べて表示するところは、項目名とデータに別々の番号を振る（例: 表の `<th data-no="9">カテゴリ</th><td data-no="10">勉強会</td>`、`<small data-no="6">主催</small><small data-no="7">山田 花子</small>`）。「主催: 山田 花子」のように 1 つの要素にまとめない。設計書で、固定の文言と API の値を別の部品として書くため。入力欄の見出しも同じように分ける（上を見る）。
+- 表の見出しのセル（`th`）は、1 つずつ番号を振る。繰り返す表（一覧）の列の見出しも同じ（例: 表が 10 なら、見出しの「タイトル」は 11、「ステータス」は 12…と振り、1 行目のデータのセルにその続きを振る）。
 - エラー表示（`.error`）にも番号を振る。画面の中に出すエラー（入力項目の下に出すもの、画面上部など決まった場所に出すもの）は、設計書で 1 つの部品として扱い、表示条件を書くため。番号は、ほかの部品と同じく画面上の位置の順に振る（入力欄のすぐ後ろなら、入力欄の次の番号）。
 - ヘッダーやフッターのように全画面で共通の領域は、まとまりで 1 つ番号を振る。中の部品は、その画面で意味を持つもの（ユーザー名、リンクなど）にだけ番号を振る。
 - 番号を振るのは、利用者が見る・操作する部品。レイアウトのための `.row` や `.spacer` には振らない。
@@ -109,8 +116,8 @@ HTML の要素はそのまま使ってよい。フォームの部品は本物の
   <div class="modal">
     <div class="dialog" data-no="1">
       <h2 data-no="2">参加者を追加</h2>
-      <label class="field" data-no="3">メールアドレス<input type="email"></label>
-      <div class="cols-2"><button data-no="4">キャンセル</button><button class="primary" data-no="5">追加する</button></div>
+      <div class="field"><label data-no="3">メールアドレス</label><div data-no="4"><input type="email"></div></div>
+      <div class="cols-2"><button data-no="5">キャンセル</button><button class="primary" data-no="6">追加する</button></div>
     </div>
   </div>
 </section>

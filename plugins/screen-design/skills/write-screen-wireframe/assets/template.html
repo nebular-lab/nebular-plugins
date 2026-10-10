@@ -20,15 +20,16 @@
     <!-- エラー表示は、画面上部に 1 つと、入力項目の下に 1 つずつ、最初から描いておく -->
     <p class="error" data-no="3">通信に失敗しました。時間をおいてもう一度お試しください</p>
 
-    <label class="field" data-no="4">
-      項目名（必須）
-      <input type="text" placeholder="入力例">
-      <small class="error" data-no="5">項目名を入力してください</small>
-    </label>
+    <!-- フォームは、見出し・入力欄・エラー表示に、別々の番号を振る -->
+    <div class="field">
+      <label data-no="4">項目名（必須）</label>
+      <div data-no="5"><input type="text" placeholder="入力例"></div>
+      <small class="error" data-no="6">項目名を入力してください</small>
+    </div>
 
     <div class="spacer"></div>
 
-    <button class="primary" data-no="6">送信</button>
+    <button class="primary" data-no="7">送信</button>
   </section>
 
 </body>
