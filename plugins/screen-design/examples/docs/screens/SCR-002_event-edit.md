@@ -4,16 +4,16 @@
 | --- | --- |
 | 画面 ID | SCR-002 |
 | 画面名 | イベント編集 |
-| URL | `/events/new`（新規作成）<br>`/events/{eventId}/edit`（編集） |
-| document.title | 新規作成: イベントを作成<br>編集: イベントを編集 |
-| 初期フォーカス | 新規作成: No.9 タイトル<br>編集: - |
+| URL | `/events/{eventId}/edit` |
+| document.title | イベントを編集 |
+| 初期フォーカス | - |
 | Enter キーで動くボタン | - |
 | ワイヤーフレーム | [SCR-002_event-edit.html](SCR-002_event-edit.html) |
 | 更新日 | 2026-10-10 |
 
 ## 1. 概要
 
-イベントを新規作成する、または既存のイベントを編集・削除する画面。下書きとして保存しておき、準備ができたら公開する。
+すでにあるイベントの内容を直す画面。下書きを公開する、公開中の内容を更新する、イベントを削除する、のどれかを行う。
 
 ## 2. クエリパラメータ
 
@@ -34,25 +34,25 @@
 
 | No | 項目名 | タグ | 入力可能文字種 | 入力可能最大文字数 | 初期値 | プレースホルダー | 編集不可条件 | 備考 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 9 | タイトル | `input（type="text"）` | - | - | 新規: 空<br>編集: `GET /events/{eventId}` の `title` | 「例: はじめての TypeScript ハンズオン」 | - | - |
-| 12 | 概要 | `textarea` | - | - | 新規: 空<br>編集: `GET /events/{eventId}` の `summary` | 「イベントの内容を 200 文字以内で入力」 | - | - |
-| 15 | カテゴリ | `select` | - | - | 新規: 「選択してください」<br>編集: `GET /events/{eventId}` の `categoryId` | - | - | - |
-| 18 | 開催形式 | `input（type="radio"）` | - | - | 新規: 「会場」<br>編集: `GET /events/{eventId}` の `format` | - | `GET /events/{eventId}` の `participantCount` が 1 以上のとき | 選択肢は固定値。「会場」は `onsite`、「オンライン」は `online` |
-| 20 | 会場名 | `input（type="text"）` | - | - | 新規: 空<br>編集: `GET /events/{eventId}` の `venueName` | 「例: 渋谷オフィス 5F セミナールーム」 | - | 表示条件: No.18 で「会場」を選んでいるとき |
-| 23 | 配信 URL | `input（type="url"）` | - | - | 新規: 空<br>編集: `GET /events/{eventId}` の `onlineUrl` | 「https://」 | - | 表示条件: No.18 で「オンライン」を選んでいるとき |
-| 26 | 開催日 | `input（type="date"）` | - | - | 新規: 空<br>編集: `GET /events/{eventId}` の `startDate` | - | `GET /events/{eventId}` の `status` が `published` か `closed` のとき | - |
-| 29 | 定員 | `input（type="number"）` | 半角数字 | 3 | 新規: 空<br>編集: `GET /events/{eventId}` の `capacity` | 「1〜999」 | `GET /events/{eventId}` の `status` が `closed` のとき | 全角数字は入力中に半角へ変換する |
-| 32 | タグ | `input（type="checkbox"）` | - | - | 新規: すべて未選択<br>編集: `GET /events/{eventId}` の `tags` | - | - | 選択肢は固定値。「初心者向け」は `beginner`、「ハンズオン」は `hands-on`、「交流」は `networking`、「無料」は `free`、「英語」は `english` |
-| 34 | 参加者への通知 | `input（type="checkbox"）` | - | - | 未選択 | - | - | 表示条件: 編集時で `GET /events/{eventId}` の `status` が `published` のとき |
+| 9 | タイトル | `input（type="text"）` | - | - | `GET /events/{eventId}` の `title` | 「例: はじめての TypeScript ハンズオン」 | - | - |
+| 12 | 概要 | `textarea` | - | - | `GET /events/{eventId}` の `summary` | 「イベントの内容を 200 文字以内で入力」 | - | - |
+| 15 | カテゴリ | `select` | - | - | `GET /events/{eventId}` の `categoryId` | - | - | - |
+| 18 | 開催形式 | `input（type="radio"）` | - | - | `GET /events/{eventId}` の `format` | - | `GET /events/{eventId}` の `participantCount` が 1 以上のとき | 選択肢は固定値。「会場」は `onsite`、「オンライン」は `online` |
+| 20 | 会場名 | `input（type="text"）` | - | - | `GET /events/{eventId}` の `venueName` | 「例: 渋谷オフィス 5F セミナールーム」 | - | 表示条件: No.18 で「会場」を選んでいるとき |
+| 23 | 配信 URL | `input（type="url"）` | - | - | `GET /events/{eventId}` の `onlineUrl` | 「https://」 | - | 表示条件: No.18 で「オンライン」を選んでいるとき |
+| 26 | 開催日 | `input（type="date"）` | - | - | `GET /events/{eventId}` の `startDate` | - | `GET /events/{eventId}` の `status` が `published` か `closed` のとき | - |
+| 29 | 定員 | `input（type="number"）` | 半角数字 | 3 | `GET /events/{eventId}` の `capacity` | 「1〜999」 | `GET /events/{eventId}` の `status` が `closed` のとき | 全角数字は入力中に半角へ変換する |
+| 32 | タグ | `input（type="checkbox"）` | - | - | `GET /events/{eventId}` の `tags` | - | - | 選択肢は固定値。「初心者向け」は `beginner`、「ハンズオン」は `hands-on`、「交流」は `networking`、「無料」は `free`、「英語」は `english` |
+| 34 | 参加者への通知 | `input（type="checkbox"）` | - | - | 未選択 | - | - | 表示条件: `GET /events/{eventId}` の `status` が `published` のとき |
 
 ### ボタン・リンク
 
 | No | 項目名 | タグ | 表示条件 | 活性条件 | 備考 |
 | --- | --- | --- | --- | --- | --- |
 | 2 | 「← 一覧へ戻る」 | `a` | 常に表示 | 常に活性 | - |
-| 35 | 「下書き保存」 | `button` | 新規作成のとき、または `GET /events/{eventId}` の `status` が `draft` のとき | No.9 に 1 文字以上入力されているとき | - |
-| 36 | 「公開する」／「更新する」 | `button` | 常に表示 | 表示中の No.9、No.15、No.18、No.20、No.23、No.26、No.29 がすべて入力されているとき | 文言は、新規作成か `GET /events/{eventId}` の `status` が `draft` のとき「公開する」、それ以外は「更新する」 |
-| 37 | 「削除」 | `button` | 編集時で、`GET /me` の `role` が `admin` のとき、または `GET /events/{eventId}` の `organizerId` が `GET /me` の `id` と同じとき | `GET /events/{eventId}` の `participantCount` が 0 のとき | - |
+| 35 | 「下書き保存」 | `button` | `GET /events/{eventId}` の `status` が `draft` のとき | No.9 に 1 文字以上入力されているとき | - |
+| 36 | 「公開する」／「更新する」 | `button` | 常に表示 | 表示中の No.9、No.15、No.20、No.23、No.26、No.29 がすべて入力されているとき | 文言は、`GET /events/{eventId}` の `status` が `draft` のとき「公開する」、それ以外は「更新する」 |
+| 37 | 「削除」 | `button` | `GET /me` の `role` が `admin` のとき、または `GET /events/{eventId}` の `organizerId` が `GET /me` の `id` と同じとき | `GET /events/{eventId}` の `participantCount` が 0 のとき | - |
 | 39 | 「キャンセル」 | `button` | No.38 を表示しているとき | 常に活性 | - |
 | 40 | 「削除する」 | `button` | No.38 を表示しているとき | 常に活性 | - |
 | 42 | 「キャンセル」 | `button` | No.41 を表示しているとき | 常に活性 | - |
@@ -62,16 +62,16 @@
 
 | No | 項目名 | タグ | 表示内容 | 表示条件 | 備考 |
 | --- | --- | --- | --- | --- | --- |
-| 3 | 見出し | `h1` | 新規: 「イベントを作成」<br>編集: 「イベントを編集」 | 常に表示 | - |
-| 4 | ステータス | `span` | `GET /events/{eventId}` の `status`<br>`draft` は「下書き」、`published` は「公開中」、`closed` は「終了」と表示する | 編集時 | - |
-| 5 | 主催者の見出し | `small` | 「主催」 | No.6 と同じ | - |
-| 6 | 主催者 | `small` | `GET /events/{eventId}` の `organizerName` | 編集時 | 省略表記: 31 文字以上なら、先頭 30 文字のあとに…を付ける |
+| 3 | 見出し | `h1` | 「イベントを編集」 | 常に表示 | - |
+| 4 | ステータス | `span` | `GET /events/{eventId}` の `status`<br>`draft` は「下書き」、`published` は「公開中」、`closed` は「終了」と表示する | 常に表示 | - |
+| 5 | 主催者の見出し | `small` | 「主催」 | 常に表示 | - |
+| 6 | 主催者 | `small` | `GET /events/{eventId}` の `organizerName` | 常に表示 | 省略表記: 31 文字以上なら、先頭 30 文字のあとに…を付ける |
 | 8 | タイトルの見出し | `label` | 「タイトル（必須）」 | 常に表示 | - |
 | 11 | 概要の見出し | `label` | 「概要」 | 常に表示 | - |
 | 14 | カテゴリの見出し | `label` | 「カテゴリ（必須）」 | 常に表示 | - |
 | 17 | 開催形式の見出し | `span` | 「開催形式」 | 常に表示 | - |
 | 19 | 会場名の見出し | `label` | 「会場名（必須）」 | No.20 と同じ | - |
-| 22 | 配信 URLの見出し | `label` | 「配信 URL（必須）」 | No.23 と同じ | - |
+| 22 | 配信 URL の見出し | `label` | 「配信 URL（必須）」 | No.23 と同じ | - |
 | 25 | 開催日の見出し | `label` | 「開催日（必須）」 | 常に表示 | - |
 | 28 | 定員の見出し | `label` | 「定員（必須）」 | 常に表示 | - |
 | 31 | タグの見出し | `span` | 「タグ（3 つまで）」 | 常に表示 | - |
@@ -106,12 +106,11 @@
    | --- | --- |
    | 200 | `id` と `role` を画面の表示条件の判定用に保持する |
    | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
-   | 上記以外 | スピナーを消す<br>MSG-022 を No.7 に表示して終了する |
+   | 上記以外 | スピナーを消す（フォームは表示しない）<br>MSG-022 を No.7 に表示して終了する |
 
 3. `role` が `member` のとき、MSG-020 をトーストで表示する。
 4. `role` が `member` のとき、SCR-001 イベント一覧へ遷移して終了する。
-5. URL パラメータ `eventId` があれば編集、なければ新規作成として扱う。
-6. `GET /categories`（operationId: `listCategories`）を呼ぶ。
+5. `GET /categories`（operationId: `listCategories`）を呼ぶ。
 
    リクエスト: なし
 
@@ -121,28 +120,25 @@
    | --- | --- |
    | 200 | `items[]` を No.15 の選択肢にする（表示は `name`、値は `id`。先頭に「選択してください」を置く） |
    | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
-   | 上記以外 | スピナーを消す<br>MSG-022 を No.7 に表示して終了する |
+   | 上記以外 | スピナーを消す（フォームは表示しない）<br>MSG-022 を No.7 に表示して終了する |
 
-7. 新規作成のとき、各入力項目に新規の初期値を入れる。
-8. 新規作成のとき、スピナーを消す。
-9. 新規作成のとき、フォームを表示して終了する。
-10. `GET /events/{eventId}`（operationId: `getEvent`）を呼ぶ。
+6. `GET /events/{eventId}`（operationId: `getEvent`）を呼ぶ。
 
-    リクエスト
+   リクエスト
 
-    | 場所 | パラメータ | 値 |
-    | --- | --- | --- |
-    | path | `eventId` | URL パラメータ `eventId` |
+   | 場所 | パラメータ | 値 |
+   | --- | --- | --- |
+   | path | `eventId` | URL パラメータ `eventId` |
 
-    レスポンス
+   レスポンス
 
-    | ステータス | 処理 |
-    | --- | --- |
-    | 200 | 各入力項目に編集の初期値を入れる<br>`status` を No.4 に、`organizerName` を No.6 に表示する<br>`version`、`status`、`participantCount`、`organizerId` を保持する<br>スピナーを消す<br>フォームを表示する |
-    | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
-    | 403 | MSG-020 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
-    | 404 | MSG-021 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
-    | 上記以外 | スピナーを消す<br>MSG-022 を No.7 に表示する |
+   | ステータス | 処理 |
+   | --- | --- |
+   | 200 | 各入力項目に、画面項目の表の初期値を入れる<br>`status` を No.4 に、`organizerName` を No.6 に表示する<br>`version`、`status`、`participantCount`、`organizerId` を保持する<br>スピナーを消す<br>フォームを表示する |
+   | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
+   | 403 | MSG-020 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
+   | 404 | MSG-021 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
+   | 上記以外 | スピナーを消す（フォームは表示しない）<br>MSG-022 を No.7 に表示する |
 
 ## 6. アクション
 
@@ -166,7 +162,7 @@
 
 ### A1. 「← 一覧へ戻る」リンク押下
 
-1. 入力内容に変更がないとき、SCR-001 イベント一覧へ遷移して終了する。
+1. 入力内容に変更がないとき（どの入力項目も、基準の値と同じとき。基準は、初期表示のときの値。下書き保存に成功したあとは、最後に保存に成功したときの入力欄の値）、SCR-001 イベント一覧へ遷移して終了する。
 2. No.41 を表示する。
 
 ### A2. No.9 からフォーカスが外れる
@@ -189,6 +185,7 @@
 3. 「オンライン」を選んだとき、No.23 を表示する。
 4. 「オンライン」を選んだとき、No.20 と No.21 を非表示にする。
 5. 非表示にした項目の入力済みの値は残す（選び直したときに戻せるようにするため）。
+6. 選び直して表示した項目のエラー表示は、非表示のままにする（次にバリデーションを行うまで出さない）。
 
 ### A4. No.29 に入力
 
@@ -198,7 +195,7 @@
    | --- | --- | --- | --- | --- |
    | 29 | 定員 | 必須 | MSG-001（v1: 定員） | No.30 |
    | 29 | 定員 | 1〜999 | MSG-009（v1: 定員、v2: 1、v3: 999） | No.30 |
-   | 29 | 定員 | 参加者数以上（編集時だけ。`participantCount` より小さいとエラー） | MSG-010（v1: `participantCount`） | No.30 |
+   | 29 | 定員 | 参加者数以上（`GET /events/{eventId}` の `participantCount` より小さいとエラー） | MSG-010（v1: `GET /events/{eventId}` の `participantCount`） | No.30 |
 
 2. エラーがあれば、No.30 に最初の 1 件を表示する。なければ No.30 を非表示にする。
 
@@ -232,12 +229,13 @@
 5. No.7 を非表示にする。
 6. No.35〜37 を非活性にする。
 7. No.35 の中にスピナーを表示する。
-8. 新規作成のとき、`POST /events`（operationId: `createEvent`）を呼ぶ。
+8. `PUT /events/{eventId}`（operationId: `updateEvent`）を呼ぶ。
 
    リクエスト
 
    | 場所 | パラメータ | 値 |
    | --- | --- | --- |
+   | path | `eventId` | URL パラメータ `eventId` |
    | body | `title` | No.9 の入力値 |
    | body | `summary` | No.12 の入力値（空なら送らない） |
    | body | `categoryId` | No.15 で選んだ値 |
@@ -248,14 +246,17 @@
    | body | `capacity` | No.29 の入力値（数値に変換） |
    | body | `tags` | No.32 で選んだ値の配列（選んでいなければ空の配列） |
    | body | `status` | 固定値 `draft` |
+   | body | `version` | 初期表示で保持した `version` |
 
    レスポンス
 
    | ステータス | 処理 |
    | --- | --- |
-   | 201 | MSG-013 をトーストで表示する<br>SCR-002 イベント編集へ遷移する（`eventId` に `id` を渡す。ブラウザの履歴を置き換える） |
+   | 200 | MSG-013 をトーストで表示する<br>`version` を保持し直す<br>そのときの入力欄の値を、入力内容に変更があるかどうかの基準にする（保存した直後は「変更なし」になる） |
    | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
    | 403 | MSG-020 をトーストで表示する |
+   | 404 | MSG-021 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
+   | 409 | MSG-018 を No.7 に表示する |
    | 422 | `errors[]` を下の「422 の表示先」のとおりに表示する<br>最初のエラー項目までスクロールする |
    | 上記以外 | MSG-022 を No.7 に表示する |
 
@@ -272,48 +273,15 @@
    | `capacity` | No.30 |
    | 上記以外 | No.7 |
 
-9. 編集のとき、`PUT /events/{eventId}`（operationId: `updateEvent`）を呼ぶ。
-
-   リクエスト
-
-   | 場所 | パラメータ | 値 |
-   | --- | --- | --- |
-   | path | `eventId` | URL パラメータ `eventId` |
-   | body | `title`〜`tags` | 手順 8 と同じ |
-   | body | `status` | 固定値 `draft` |
-   | body | `version` | 初期表示で保持した `version` |
-
-   レスポンス
-
-   | ステータス | 処理 |
-   | --- | --- |
-   | 200 | MSG-013 をトーストで表示する<br>`version` を保持し直す |
-   | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
-   | 403 | MSG-020 をトーストで表示する |
-   | 404 | MSG-021 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
-   | 409 | MSG-018 を No.7 に表示する |
-   | 422 | `errors[]` を A6 の「422 の表示先」のとおりに表示する<br>最初のエラー項目までスクロールする |
-   | 上記以外 | MSG-022 を No.7 に表示する |
-
-10. No.35 の中のスピナーを消す。
-11. 画面に残っているとき、No.35〜37 の非活性を解除する（活性条件に従う状態に戻す）。
+9. No.35 の中のスピナーを消す。
+10. 画面に残っているとき、No.35〜37 の非活性を解除する（活性条件に従う状態に戻す）。
 
 ### A7. 「公開する」／「更新する」ボタン押下
 
 1. A6 の手順 1〜4 と同じくバリデーションを行う（エラーがあれば終了する）。
 2. No.7 を非表示にする。
 3. No.35〜37 を非活性にする。
-4. 新規作成のとき、A6 の手順 8 と同じく `POST /events` を呼ぶ。ただし body の `status` は固定値 `published` にし、レスポンスは次のとおり扱う。
-
-   | ステータス | 処理 |
-   | --- | --- |
-   | 201 | MSG-014 をトーストで表示する<br>SCR-001 イベント一覧へ遷移する |
-   | 401 | ログイン画面（`/login?redirect=` に現在の URL）へ遷移する |
-   | 403 | MSG-020 をトーストで表示する |
-   | 422 | `errors[]` を A6 の「422 の表示先」のとおりに表示する<br>最初のエラー項目までスクロールする |
-   | 上記以外 | MSG-022 を No.7 に表示する |
-
-5. 編集のとき、`PUT /events/{eventId}`（operationId: `updateEvent`）を呼ぶ。
+4. `PUT /events/{eventId}`（operationId: `updateEvent`）を呼ぶ。
 
    リクエスト
 
@@ -337,7 +305,7 @@
    | 422 | `errors[]` を A6 の「422 の表示先」のとおりに表示する<br>最初のエラー項目までスクロールする |
    | 上記以外 | MSG-022 を No.7 に表示する |
 
-6. 画面に残っているとき、No.35〜37 の非活性を解除する（活性条件に従う状態に戻す）。
+5. 画面に残っているとき、No.35〜37 の非活性を解除する（活性条件に従う状態に戻す）。
 
 ### A8. 「削除」ボタン押下
 
@@ -382,7 +350,7 @@
 
 ### A13. ブラウザの戻る・再読み込み・タブを閉じる
 
-1. 入力内容に変更があるとき、ブラウザ標準の離脱確認ダイアログを表示する（文言はブラウザが決めるため指定できない）。
+1. 入力内容に変更があるとき（変更があるかどうかの基準は、A1 の手順 1 と同じ）、ブラウザ標準の離脱確認ダイアログを表示する（文言はブラウザが決めるため指定できない）。
 
 ## 7. 未決事項
 

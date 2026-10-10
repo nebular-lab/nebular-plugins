@@ -1,5 +1,5 @@
 /**
- * SCR-002 イベント編集 の E2E テスト
+ * SCR-002 イベント編集 の Playwright テスト
  *
  * 設計書: docs/screens/SCR-002_event-edit.md
  * ワイヤーフレーム: docs/screens/SCR-002_event-edit.html
@@ -8,7 +8,8 @@
  *
  * テスト名の先頭の [...] は、設計書のどこから作ったケースかを、場面・項目名・条件で示す。
  *   [初期表示 / GET /events/{eventId} 404]            … 5. 初期表示時の処理 の GET /events/{eventId}、レスポンス 404
- *   [「下書き保存」ボタン押下（新規作成） / POST /events リクエスト] … アクション「「下書き保存」ボタン押下」のリクエストの表
+ *   [「下書き保存」ボタン押下 / PUT /events/{eventId} リクエスト] … アクション「「下書き保存」ボタン押下」のリクエストの表
+ *   [「下書き保存」ボタン押下 / PUT /events/{eventId} 409] … アクション「「下書き保存」ボタン押下」のレスポンスの表の 409 の行
  *   [開催形式の選択を変更 / 「会場」を選んだとき]      … アクション「開催形式の選択を変更」の手順（API を呼ばない）
  *   [タイトル 50 文字以内]                              … バリデーションのチェック表の、タイトルの「50 文字以内」の行
  *   [定員 入力可能最大文字数]                           … 画面項目「定員」の入力可能最大文字数
@@ -24,6 +25,9 @@
  * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
  * - メッセージ（トーストを含む）は画面上のテキストとして 1 か所に表示され、遷移後も確かめられる間は表示されている
  * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「入力可能最大文字数」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
+ *
+ * バリデーションや入力できる範囲など、イベントの状態によらないケースは、下書きのイベント（draftEvent）を開いて確かめる。
+ * 下書きなら「下書き保存」ボタンが表示され、開催日も編集できるため。保存しても画面に残るので、送った値も確かめやすい。
  */
 import type { Page } from '@playwright/test';
 import { test, expect, deferred, type ApiMock } from '../support/api-mock';
@@ -113,7 +117,7 @@ const publishedEvent: Event = {
   updatedAt: '2026-09-20T10:00:00Z',
 };
 
-/** 下書き・会場・参加者なし */
+/** 下書き・会場・参加者なし。必須項目はすべて正しい値で埋まっている */
 const draftEvent: Event = {
   id: 'e-draft',
   title: 'エンジニア交流会 秋',
@@ -131,8 +135,8 @@ const draftEvent: Event = {
   updatedAt: '2026-09-21T10:00:00Z',
 };
 
-/** 新規作成の下書き保存に対する 201 の応答（fillValidNew() の値で作られたもの） */
-const createdEvent: Event = { ...draftEvent, id: 'e-new', title: 'Go 勉強会', categoryId: 'c-study', startDate: '2026-10-20', capacity: 20 };
+/** draftEvent の下書き保存に対する 200 の応答（version が進む） */
+const savedDraft: Event = { ...draftEvent, version: 2 };
 
 const apiError = (code: string) => ({ code, message: code });
 const validationError = { errors: [{ field: 'title', message: 'このタイトルはすでに使われています' }] };
@@ -144,6 +148,8 @@ const ui = (page: Page) => {
   return {
     back: page.getByRole('link', { name: '← 一覧へ戻る' }), // No.2
     heading: (name: string) => page.getByRole('heading', { name, exact: true }), // No.3
+    /** ステータス（No.4）。文言で特定する */
+    status: (label: string) => page.getByText(label, { exact: true }),
     /** 主催者の見出し（No.5）。見出しとデータは別の部品 */
     organizerLabel: page.getByText('主催', { exact: true }),
     /** 主催者（No.6）。文言で特定する */
@@ -160,7 +166,7 @@ const ui = (page: Page) => {
     tag: (name: string) => page.getByRole('checkbox', { name, exact: true }), // No.32
     notify: page.getByRole('checkbox', { name: '変更を参加者にメールで通知する' }), // No.34
     draft: page.getByRole('button', { name: '下書き保存', exact: true }), // No.35
-    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.36（新規・下書き）
+    publish: page.getByRole('button', { name: '公開する', exact: true }), // No.36（下書き）
     update: page.getByRole('button', { name: '更新する', exact: true }), // No.36（公開中・終了）
     del: page.getByRole('button', { name: '削除', exact: true }), // No.37
     dialog, // No.38（削除の確認）、No.41（離脱の確認）。同時には 1 つしか表示されない
@@ -181,40 +187,15 @@ function mockInitial(api: ApiMock, opts: { user?: User; event?: Event } = {}) {
   };
 }
 
-async function openNew(page: Page, api: ApiMock, user: User = users.organizer) {
-  mockInitial(api, { user });
-  await page.goto('/events/new');
-  await expect(ui(page).title).toBeVisible();
-}
+const editPath = (event: Event) => `/events/${event.id}/edit`;
 
 async function openEdit(page: Page, api: ApiMock, event: Event, user: User = users.organizer) {
   mockInitial(api, { user, event });
-  await page.goto(`/events/${event.id}/edit`);
+  await page.goto(editPath(event));
   await expect(ui(page).title).toHaveValue(event.title);
 }
 
-/** 新規作成で、必須項目を正しい値で埋める（開催形式は初期値の「会場」のまま） */
-async function fillValidNew(page: Page) {
-  const u = ui(page);
-  await u.title.fill('Go 勉強会');
-  await u.category.selectOption({ label: '勉強会' });
-  await u.venue.fill('渋谷オフィス 5F');
-  await u.startDate.fill('2026-10-20');
-  await u.capacity.fill('20');
-}
-
-/** fillValidNew() で送られるはずの body */
-const validNewBody = {
-  title: 'Go 勉強会',
-  categoryId: 'c-study',
-  format: 'onsite',
-  venueName: '渋谷オフィス 5F',
-  startDate: '2026-10-20',
-  capacity: 20,
-  tags: [],
-};
-
-/** 編集で、初期値のまま保存したときに送られるはずの body（title〜tags） */
+/** 初期値のまま保存したときに送られるはずの body（title〜tags） */
 function bodyOf(event: Event) {
   const { title, summary, categoryId, format, venueName, onlineUrl, startDate, capacity, tags } = event;
   return {
@@ -229,6 +210,9 @@ function bodyOf(event: Event) {
   };
 }
 
+/** draftEvent を初期値のまま「下書き保存」したときに送られるはずの body */
+const draftSaveBody = { ...bodyOf(draftEvent), status: 'draft', version: 1 };
+
 /** ログイン画面へ、redirect に今いた画面のパスを付けて遷移したことを確かめる */
 const toLogin = (fromPath: string) => async (page: Page) => {
   await expect(page).toHaveURL(/\/login\?/);
@@ -239,6 +223,8 @@ const q = (message: string) => `「${message}」`;
 /** 文言を含むことを確かめるための正規表現（説明にほかの文が混ざっていてもよい） */
 const containing = (text: string) => new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 const toList = async (page: Page) => expect(page).toHaveURL(/\/events$/);
+/** この画面に残っていることを確かめる */
+const staysOn = (page: Page, event: Event) => expect(page).toHaveURL(new RegExp(`${editPath(event)}$`));
 const shows = (text: string) => async (page: Page) => expect(page.getByText(text)).toBeVisible();
 /** 画面の下端までスクロールしてから押す（最初のエラー項目までスクロールすることを確かめるため） */
 async function scrollDownAndClick(page: Page, button: ReturnType<Page['getByRole']>) {
@@ -282,18 +268,21 @@ test.describe('SCR-002 イベント編集', () => {
 
   test.describe('API: 初期表示', () => {
     const meOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin('/events/new') },
-      { status: 500, other: true, label: `${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, also: '権限 未ログイン', expect: toLogin(editPath(draftEvent)) },
+      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
     ];
     for (const o of meOutcomes) {
-      test(`[初期表示 / GET /me ${statusLabel(o)}${also(o)}] ${o.label}`, async ({ page, api }) => {
+      test(`[初期表示 / GET /me ${statusLabel(o)}${also(o)}] GET /me で ${returns(o)}、${o.label}`, async ({ page, api }) => {
         const { categories } = mockInitial(api);
         api.on('GET /me', { status: o.status, body: o.body });
         if (o.leaves) api.allowUnmockedCalls();
-        await page.goto('/events/new');
+        await page.goto(editPath(draftEvent));
         await o.expect(page);
-        // 「終了する」ので、後続の GET /categories は呼ばない
-        if (!o.leaves) expect(categories.requests).toHaveLength(0);
+        if (o.other) {
+          // 「終了する」ので、後続の GET /categories は呼ばず、フォームも表示しない
+          expect(categories.requests).toHaveLength(0);
+          await expect(ui(page).title).toBeHidden();
+        }
       });
     }
 
@@ -303,52 +292,37 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test('[初期表示 / GET /categories 200] items[] をカテゴリの選択肢にし、先頭に「選択してください」を置く', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       await expect(ui(page).category.locator('option')).toHaveText(['選択してください', '勉強会', '交流会']);
     });
 
     const categoriesOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(`/events/${draftEvent.id}/edit`) },
-      { status: 500, other: true, label: `${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(draftEvent)) },
+      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示して終了する`, expect: shows(M.MSG022) },
     ];
     for (const o of categoriesOutcomes) {
-      test(`[初期表示 / GET /categories ${statusLabel(o)}] ${o.label}`, async ({ page, api }) => {
+      test(`[初期表示 / GET /categories ${statusLabel(o)}] GET /categories で ${returns(o)}、${o.label}`, async ({ page, api }) => {
         const { event } = mockInitial(api);
         api.on('GET /categories', { status: o.status, body: o.body });
         if (o.leaves) api.allowUnmockedCalls();
-        await page.goto(`/events/${draftEvent.id}/edit`);
+        await page.goto(editPath(draftEvent));
         await o.expect(page);
-        // 「終了する」ので、後続の GET /events/{eventId} は呼ばない
-        if (!o.leaves) expect(event.requests).toHaveLength(0);
+        if (o.other) {
+          // 「終了する」ので、後続の GET /events/{eventId} は呼ばず、フォームも表示しない
+          expect(event.requests).toHaveLength(0);
+          await expect(ui(page).title).toBeHidden();
+        }
       });
     }
 
-    test('[初期表示 / eventId がないとき / 入力項目 初期値（新規作成）] URL に eventId がなければ新規作成として、新規の初期値を入れる', async ({ page, api }) => {
-      const { event } = mockInitial(api);
-      await page.goto('/events/new');
-      const u = ui(page);
-      await expect(u.title).toHaveValue('');
-      await expect(u.summary).toHaveValue('');
-      await expect(u.category.locator('option:checked')).toHaveText('選択してください');
-      await expect(u.onsite).toBeChecked();
-      await expect(u.venue).toHaveValue('');
-      await expect(u.startDate).toHaveValue('');
-      await expect(u.capacity).toHaveValue('');
-      for (const tag of ['初心者向け', 'ハンズオン', '交流', '無料', '英語']) await expect(u.tag(tag)).not.toBeChecked();
-      await u.online.check(); // No.23 は「オンライン」のときだけ表示される
-      await expect(u.onlineUrl).toHaveValue('');
-      // 新規作成では GET /events/{eventId} を呼ばない（手順 9 で終了する）
-      expect(event.requests).toHaveLength(0);
-    });
-
-    test('[初期表示 / eventId があるとき / GET /events/{eventId} リクエスト] path の eventId に URL パラメータ eventId を入れる', async ({ page, api }) => {
+    test('[初期表示 / GET /events/{eventId} リクエスト] path の eventId に URL パラメータ eventId を入れる', async ({ page, api }) => {
       const { event } = mockInitial(api, { event: publishedEvent });
-      await page.goto(`/events/${publishedEvent.id}/edit`);
+      await page.goto(editPath(publishedEvent));
       await expect.poll(() => event.requests.length).toBe(1);
       expect(event.last().pathParams).toEqual({ eventId: publishedEvent.id });
     });
 
-    test('[初期表示 / GET /events/{eventId} 200 / 入力項目 初期値（編集）] 各入力項目に編集の初期値を入れる', async ({ page, api }) => {
+    test('[初期表示 / GET /events/{eventId} 200 / 入力項目 初期値] 各入力項目に、取得したイベントの値を入れる（参加者への通知は未選択）', async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
       const u = ui(page);
       await expect(u.title).toHaveValue(publishedEvent.title);
@@ -364,7 +338,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.notify).not.toBeChecked();
     });
 
-    test('[初期表示 / GET /events/{eventId} 200 / 開催形式・会場名 初期値（編集）] 会場のイベントなら、「会場」を選び、会場名に venueName を入れる', async ({ page, api }) => {
+    test('[初期表示 / GET /events/{eventId} 200 / 開催形式・会場名 初期値] 会場のイベントなら、「会場」を選び、会場名に venueName を入れる', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).onsite).toBeChecked();
       await expect(ui(page).venue).toHaveValue(draftEvent.venueName!);
@@ -372,12 +346,12 @@ test.describe('SCR-002 イベント編集', () => {
 
     test('[初期表示 / GET /events/{eventId} 200] status をステータスに、organizerName を主催者に表示する', async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
-      await expect(page.getByText('公開中', { exact: true })).toBeVisible();
+      await expect(ui(page).status('公開中')).toBeVisible();
       await expect(ui(page).organizer('山田 花子')).toBeVisible();
     });
 
     const eventOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(`/events/${publishedEvent.id}/edit`) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(publishedEvent)) },
       {
         status: 403,
         body: apiError('forbidden'),
@@ -399,23 +373,27 @@ test.describe('SCR-002 イベント編集', () => {
           await toList(page);
         },
       },
-      { status: 500, other: true, label: `${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
+      { status: 500, other: true, label: `フォームを表示せず、${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
     ];
     for (const o of eventOutcomes) {
-      test(`[初期表示 / GET /events/{eventId} ${statusLabel(o)}${also(o)}] ${o.label}`, async ({ page, api }) => {
+      test(`[初期表示 / GET /events/{eventId} ${statusLabel(o)}${also(o)}] GET /events/{eventId} で ${returns(o)}、${o.label}`, async ({ page, api }) => {
         mockInitial(api, { event: publishedEvent });
         api.on('GET /events/{eventId}', { status: o.status, body: o.body });
         if (o.leaves) api.allowUnmockedCalls();
-        await page.goto(`/events/${publishedEvent.id}/edit`);
+        await page.goto(editPath(publishedEvent));
         await o.expect(page);
+        // スピナーを消すだけで、フォームは表示しない
+        if (o.other) await expect(ui(page).title).toBeHidden();
       });
     }
+
+    test.fixme('[初期表示 / 読み込み中] 取得が終わるまで、フォームの代わりにスピナーを表示し、終わったら消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
 
     test('[初期表示 / 読み込み中] GET /events/{eventId} の応答が返るまでフォームを表示せず、返ったら表示する', async ({ page, api }) => {
       mockInitial(api);
       const reply = deferred<{ status: number; body: unknown }>();
       const event = api.on('GET /events/{eventId}', () => reply.promise);
-      await page.goto(`/events/${draftEvent.id}/edit`);
+      await page.goto(editPath(draftEvent));
       await expect.poll(() => event.requests.length).toBe(1);
       await expect(ui(page).title).toBeHidden();
       reply.resolve({ status: 200, body: draftEvent });
@@ -424,32 +402,35 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('API: 「下書き保存」ボタン押下', () => {
-    test('[「下書き保存」ボタン押下（新規作成） / POST /events リクエスト] 新規作成の下書き保存で、入力値を body に入れ、status に draft を入れる', async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-      await fillValidNew(page);
+    test('[「下書き保存」ボタン押下 / PUT /events/{eventId} リクエスト] path に eventId、body に入力値・draft・保持した version を入れる', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       await ui(page).draft.click();
-      await expect.poll(() => post.requests.length).toBe(1);
+      await expect.poll(() => put.requests.length).toBe(1);
+      expect(put.last().pathParams).toEqual({ eventId: draftEvent.id });
       // 概要は空なので送らない、開催形式は「会場」なので onlineUrl は送らない、タグは空の配列
-      expect(post.last().body).toEqual({ ...validNewBody, status: 'draft' });
+      expect(put.last().body).toEqual(draftSaveBody);
     });
 
     const conditionalRequestCases: { cond: string; label: string; setup: (page: Page) => Promise<void>; expected: Record<string, unknown> }[] = [
       {
         cond: '概要あり',
         label: '概要を入力すると summary を送る',
-        setup: (p) => ui(p).summary.fill('Go の基本を学ぶ'),
-        expected: { ...validNewBody, summary: 'Go の基本を学ぶ', status: 'draft' },
+        setup: (p) => ui(p).summary.fill('秋の交流会です'),
+        expected: { ...draftSaveBody, summary: '秋の交流会です' },
       },
       {
         cond: 'オンライン',
         label: '「オンライン」なら onlineUrl を送り、入力済みの venueName は送らない',
         setup: async (p) => {
-          await ui(p).online.check(); // 会場名は fillValidNew() で入力済み（切り替えても値は残る）
-          await ui(p).onlineUrl.fill('https://meet.example.com/go');
+          await ui(p).online.check(); // 会場名は初期値が入っている（切り替えても値は残る）
+          await ui(p).onlineUrl.fill('https://meet.example.com/autumn');
         },
-        expected: (({ venueName: _, ...rest }) => ({ ...rest, format: 'online', onlineUrl: 'https://meet.example.com/go', status: 'draft' }))(validNewBody),
+        expected: {
+          ...bodyOf({ ...draftEvent, format: 'online', venueName: undefined, onlineUrl: 'https://meet.example.com/autumn' }),
+          status: 'draft',
+          version: 1,
+        },
       },
       {
         cond: 'タグあり',
@@ -458,74 +439,23 @@ test.describe('SCR-002 イベント編集', () => {
           await ui(p).tag('初心者向け').check();
           await ui(p).tag('無料').check();
         },
-        expected: { ...validNewBody, tags: ['beginner', 'free'], status: 'draft' },
+        expected: { ...draftSaveBody, tags: ['beginner', 'free'] },
       },
     ];
     for (const c of conditionalRequestCases) {
-      test(`[「下書き保存」ボタン押下（新規作成） / POST /events リクエスト（${c.cond}）] ${c.label}`, async ({ page, api }) => {
-        await openNew(page, api);
-        const post = api.on('POST /events', { status: 201, body: createdEvent });
-        api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-        await fillValidNew(page);
+      test(`[「下書き保存」ボタン押下 / PUT /events/{eventId} リクエスト（${c.cond}）] ${c.label}`, async ({ page, api }) => {
+        await openEdit(page, api, draftEvent);
+        const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
         await c.setup(page);
         await ui(page).draft.click();
-        await expect.poll(() => post.requests.length).toBe(1);
-        expect(post.last().body).toEqual(c.expected);
+        await expect.poll(() => put.requests.length).toBe(1);
+        expect(put.last().body).toEqual(c.expected);
       });
     }
 
-    test(`[「下書き保存」ボタン押下（新規作成） / POST /events 201] ${q(M.MSG013)}を表示し、イベント編集（/events/{id}/edit）へ遷移して編集として開く`, async ({ page, api }) => {
-      await openNew(page, api);
-      api.on('POST /events', { status: 201, body: createdEvent });
-      api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-      await fillValidNew(page);
-      await ui(page).draft.click();
-      await expect(page.getByText(M.MSG013)).toBeVisible();
-      await expect(page).toHaveURL(/\/events\/e-new\/edit$/);
-      await expect(ui(page).heading('イベントを編集')).toBeVisible();
-    });
-
-    test('[「下書き保存」ボタン押下（新規作成） / POST /events 201] ブラウザの履歴は置き換えるので、ブラウザの戻るで新規作成に戻らない', async ({ page, api }) => {
-      await openNew(page, api);
-      api.on('POST /events', { status: 201, body: createdEvent });
-      api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-      await fillValidNew(page);
-      await ui(page).draft.click();
-      await expect(page).toHaveURL(/\/events\/e-new\/edit$/);
-      api.allowUnmockedCalls(); // 戻った先の画面の通信は確かめない
-      await page.goBack();
-      await expect(page).not.toHaveURL(/\/events\/new$/);
-    });
-
-    const postOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin('/events/new') },
-      { status: 403, body: apiError('forbidden'), label: `${q(M.MSG020)}を表示する`, expect: shows(M.MSG020) },
-      { status: 422, body: validationError, label: 'errors[].message を対応する項目のエラー表示に表示し、その項目までスクロールする', expect: shows422 },
-      { status: 500, other: true, label: `${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
-    ];
-    for (const o of postOutcomes) {
-      test(`[「下書き保存」ボタン押下（新規作成） / POST /events ${statusLabel(o)}] 新規作成の下書き保存で ${returns(o)}、${o.label}`, async ({ page, api }) => {
-        await openNew(page, api);
-        api.on('POST /events', { status: o.status, body: o.body });
-        await fillValidNew(page);
-        if (o.leaves) api.allowUnmockedCalls();
-        await scrollDownAndClick(page, ui(page).draft);
-        await o.expect(page);
-      });
-    }
-
-    test('[「下書き保存」ボタン押下（編集） / PUT /events/{eventId} リクエスト] 編集の下書き保存で、path に eventId、body に入力値・draft・保持した version を入れる', async ({ page, api }) => {
+    test(`[「下書き保存」ボタン押下 / PUT /events/{eventId} 200] ${q(M.MSG013)}を表示し、返ってきた version を次の保存で送る`, async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
-      const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, version: 2 } });
-      await ui(page).draft.click();
-      await expect.poll(() => put.requests.length).toBe(1);
-      expect(put.last().pathParams).toEqual({ eventId: draftEvent.id });
-      expect(put.last().body).toEqual({ ...bodyOf(draftEvent), status: 'draft', version: 1 });
-    });
-
-    test(`[「下書き保存」ボタン押下（編集） / PUT /events/{eventId} 200] ${q(M.MSG013)}を表示し、返ってきた version を次の保存で送る`, async ({ page, api }) => {
-      await openEdit(page, api, draftEvent);
-      const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, version: 2 } });
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       await ui(page).draft.click();
       await expect(page.getByText(M.MSG013)).toBeVisible();
       await ui(page).draft.click();
@@ -534,7 +464,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     const putOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(`/events/${draftEvent.id}/edit`) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(draftEvent)) },
       { status: 403, body: apiError('forbidden'), label: `${q(M.MSG020)}を表示する`, expect: shows(M.MSG020) },
       {
         status: 404,
@@ -551,7 +481,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 500, other: true, label: `${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
     ];
     for (const o of putOutcomes) {
-      test(`[「下書き保存」ボタン押下（編集） / PUT /events/{eventId} ${statusLabel(o)}] 編集の下書き保存で ${returns(o)}、${o.label}`, async ({ page, api }) => {
+      test(`[「下書き保存」ボタン押下 / PUT /events/{eventId} ${statusLabel(o)}] 下書き保存で ${returns(o)}、${o.label}`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent);
         api.on('PUT /events/{eventId}', { status: o.status, body: o.body });
         if (o.leaves) api.allowUnmockedCalls();
@@ -559,6 +489,13 @@ test.describe('SCR-002 イベント編集', () => {
         await o.expect(page);
       });
     }
+
+    test('[「下書き保存」ボタン押下 / PUT /events/{eventId} 422（上記以外の field）] 表示先の決まっていない field（format）のエラーも、errors[].message を表示する', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      api.on('PUT /events/{eventId}', { status: 422, body: { errors: [{ field: 'format', message: '開催形式が正しくありません' }] } });
+      await ui(page).draft.click();
+      await expect(page.getByText('開催形式が正しくありません')).toBeVisible();
+    });
 
     test('[「下書き保存」ボタン押下 / 保存中] 保存中は「下書き保存」「公開する」「削除」ボタンを非活性にし、応答後に非活性を解除する', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
@@ -570,7 +507,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.draft).toBeDisabled();
       await expect(u.publish).toBeDisabled();
       await expect(u.del).toBeDisabled();
-      reply.resolve({ status: 200, body: { ...draftEvent, version: 2 } });
+      reply.resolve({ status: 200, body: savedDraft });
       await expect(page.getByText(M.MSG013)).toBeVisible();
       await expect(u.draft).toBeEnabled();
       await expect(u.publish).toBeEnabled();
@@ -579,20 +516,12 @@ test.describe('SCR-002 イベント編集', () => {
 
     test.fixme('[「下書き保存」ボタン押下 / 保存中の表示] 保存中は「下書き保存」ボタンの中にスピナーを表示し、応答後に消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
 
-    test('[「下書き保存」ボタン押下（新規作成） / POST /events 422（上記以外の field）] 表示先の決まっていない field（format）のエラーも、errors[].message を表示する', async ({ page, api }) => {
-      await openNew(page, api);
-      api.on('POST /events', { status: 422, body: { errors: [{ field: 'format', message: '開催形式が正しくありません' }] } });
-      await fillValidNew(page);
-      await ui(page).draft.click();
-      await expect(page.getByText('開催形式が正しくありません')).toBeVisible();
-    });
-
     test(`[「下書き保存」ボタン押下 / 画面上部のエラーの消去] ${q(M.MSG018)}を表示したあと、もう一度保存すると画面上部のエラー表示を消す`, async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       api.on('PUT /events/{eventId}', { status: 409, body: apiError('conflict') });
       await ui(page).draft.click();
       await expect(page.getByText(M.MSG018)).toBeVisible();
-      api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, version: 2 } });
+      api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       await ui(page).draft.click();
       await expect(page.getByText(M.MSG013)).toBeVisible();
       await expect(page.getByText(M.MSG018)).toBeHidden();
@@ -600,44 +529,7 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('API: 「公開する」／「更新する」ボタン押下', () => {
-    test('[「公開する」ボタン押下（新規作成） / POST /events リクエスト] 新規作成の公開で、下書き保存と同じ body に status published を入れる', async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: { ...createdEvent, status: 'published' } });
-      await fillValidNew(page);
-      api.allowUnmockedCalls(); // 201 で一覧へ遷移するため
-      await ui(page).publish.click();
-      await expect.poll(() => post.requests.length).toBe(1);
-      expect(post.last().body).toEqual({ ...validNewBody, status: 'published' });
-    });
-
-    const postOutcomes: Outcome[] = [
-      {
-        status: 201,
-        body: { ...createdEvent, status: 'published' },
-        label: `${q(M.MSG014)}を表示し、イベント一覧へ遷移する`,
-        leaves: true,
-        expect: async (page) => {
-          await expect(page.getByText(M.MSG014)).toBeVisible();
-          await toList(page);
-        },
-      },
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin('/events/new') },
-      { status: 403, body: apiError('forbidden'), label: `${q(M.MSG020)}を表示する`, expect: shows(M.MSG020) },
-      { status: 422, body: validationError, label: 'errors[].message を対応する項目のエラー表示に表示し、その項目までスクロールする', expect: shows422 },
-      { status: 500, other: true, label: `${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
-    ];
-    for (const o of postOutcomes) {
-      test(`[「公開する」ボタン押下（新規作成） / POST /events ${statusLabel(o)}] 新規作成の公開で ${returns(o)}、${o.label}`, async ({ page, api }) => {
-        await openNew(page, api);
-        api.on('POST /events', { status: o.status, body: o.body });
-        await fillValidNew(page);
-        if (o.leaves) api.allowUnmockedCalls();
-        await scrollDownAndClick(page, ui(page).publish);
-        await o.expect(page);
-      });
-    }
-
-    test('[「公開する」／「更新する」ボタン押下（編集） / PUT /events/{eventId} リクエスト（下書き）] 下書きの公開で、status に published を入れ、notifyParticipants は送らない', async ({ page, api }) => {
+    test('[「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} リクエスト（下書き）] 下書きの公開で、status に published を入れ、notifyParticipants は送らない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, status: 'published' } });
       api.allowUnmockedCalls(); // 200 で一覧へ遷移するため
@@ -652,7 +544,7 @@ test.describe('SCR-002 イベント編集', () => {
       { checked: true, name: '参加者への通知を選択' },
     ];
     for (const c of notifyCases) {
-      test(`[「公開する」／「更新する」ボタン押下（編集） / PUT /events/{eventId} リクエスト（公開中・${c.name}）] 公開中の更新で、status は保持した値のまま、notifyParticipants に ${c.checked} を入れる`, async ({ page, api }) => {
+      test(`[「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} リクエスト（公開中・${c.name}）] 公開中の更新で、status は保持した値のまま、notifyParticipants に ${c.checked} を入れる`, async ({ page, api }) => {
         await openEdit(page, api, publishedEvent);
         const put = api.on('PUT /events/{eventId}', { status: 200, body: publishedEvent });
         if (c.checked) await ui(page).notify.check();
@@ -663,7 +555,7 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[「公開する」／「更新する」ボタン押下（編集） / PUT /events/{eventId} リクエスト（終了）] 終了したイベントの更新で、status は保持した closed のまま送り、notifyParticipants は送らない', async ({ page, api }) => {
+    test('[「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} リクエスト（終了）] 終了したイベントの更新で、status は保持した closed のまま送り、notifyParticipants は送らない', async ({ page, api }) => {
       const closed = { ...publishedEvent, status: 'closed' as const };
       await openEdit(page, api, closed);
       const put = api.on('PUT /events/{eventId}', { status: 200, body: closed });
@@ -678,7 +570,7 @@ test.describe('SCR-002 イベント編集', () => {
       { event: publishedEvent, name: '公開中', button: 'update' as const, message: M.MSG015 },
     ];
     for (const c of okCases) {
-      test(`[「公開する」／「更新する」ボタン押下（編集） / PUT /events/{eventId} 200（${c.name}）] ${c.name}のイベントで 200 が返ると、${q(c.message)}を表示し、イベント一覧へ遷移する`, async ({ page, api }) => {
+      test(`[「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} 200（${c.name}）] ${c.name}のイベントで 200 が返ると、${q(c.message)}を表示し、イベント一覧へ遷移する`, async ({ page, api }) => {
         await openEdit(page, api, c.event);
         api.on('PUT /events/{eventId}', { status: 200, body: c.event });
         api.allowUnmockedCalls();
@@ -689,7 +581,7 @@ test.describe('SCR-002 イベント編集', () => {
     }
 
     const putOutcomes: Outcome[] = [
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(`/events/${publishedEvent.id}/edit`) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(publishedEvent)) },
       { status: 403, body: apiError('forbidden'), label: `${q(M.MSG020)}を表示する`, expect: shows(M.MSG020) },
       {
         status: 404,
@@ -706,7 +598,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 500, other: true, label: `${q(M.MSG022)}を表示する`, expect: shows(M.MSG022) },
     ];
     for (const o of putOutcomes) {
-      test(`[「公開する」／「更新する」ボタン押下（編集） / PUT /events/{eventId} ${statusLabel(o)}] 公開中の更新で ${returns(o)}、${o.label}`, async ({ page, api }) => {
+      test(`[「公開する」／「更新する」ボタン押下 / PUT /events/{eventId} ${statusLabel(o)}] 公開中の更新で ${returns(o)}、${o.label}`, async ({ page, api }) => {
         await openEdit(page, api, publishedEvent);
         api.on('PUT /events/{eventId}', { status: o.status, body: o.body });
         if (o.leaves) api.allowUnmockedCalls();
@@ -774,7 +666,7 @@ test.describe('SCR-002 イベント編集', () => {
           await toList(page);
         },
       },
-      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(`/events/${draftEvent.id}/edit`) },
+      { status: 401, body: apiError('unauthorized'), label: 'ログイン画面へ遷移する', leaves: true, expect: toLogin(editPath(draftEvent)) },
       { status: 403, body: apiError('forbidden'), label: `削除の確認を閉じ、${q(M.MSG020)}を表示する`, expect: closesDialog(M.MSG020) },
       {
         status: 404,
@@ -836,15 +728,15 @@ test.describe('SCR-002 イベント編集', () => {
   test.describe('API を呼ばない手順', () => {
     test(`[初期表示 / member のとき / 権限 member] member が開くと ${q(M.MSG020)}を表示する`, async ({ page, api }) => {
       mockInitial(api, { user: users.member });
-      api.allowUnmockedCalls(); // 手順 4 で一覧へ遷移するため
-      await page.goto('/events/new');
+      api.allowUnmockedCalls(); // 続く手順で一覧へ遷移するため
+      await page.goto(editPath(draftEvent));
       await expect(page.getByText(M.MSG020)).toBeVisible();
     });
 
     test('[初期表示 / member のとき / 権限 member] member が開くとイベント一覧へ遷移して終了する', async ({ page, api }) => {
       const { categories } = mockInitial(api, { user: users.member });
       api.allowUnmockedCalls(); // 一覧へ遷移するため
-      await page.goto('/events/new');
+      await page.goto(editPath(draftEvent));
       await toList(page);
       // 「終了する」ので、後続の GET /categories は呼ばない
       expect(categories.requests).toHaveLength(0);
@@ -858,9 +750,9 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of formatCases) {
       test(`[開催形式の選択を変更 / 「${c.select}」を選んだとき / ${c.item} 表示条件] 開催形式で「${c.select}」を選ぶと、${c.item}を${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
-        await openNew(page, api);
+        await openEdit(page, api, draftEvent);
         const u = ui(page);
-        // 初期値は「会場」なので、いったん反対を選んでから選び直す
+        // いったん反対を選んでから選び直す（初期値のままでは、切り替えたことにならないため）
         await (c.select === '会場' ? u.online : u.onsite).check();
         await (c.select === '会場' ? u.onsite : u.online).check();
         if (c.visible) await expect(u[c.field]).toBeVisible();
@@ -869,8 +761,7 @@ test.describe('SCR-002 イベント編集', () => {
     }
 
     test(`[開催形式の選択を変更 / 「オンライン」を選んだとき / 会場名のエラー] 会場名のエラーを表示したあと「オンライン」を選ぶと、会場名のエラー表示を消す`, async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.venue.fill('');
       await u.draft.click();
@@ -881,10 +772,9 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test(`[開催形式の選択を変更 / 「会場」を選んだとき / 配信 URL のエラー] 配信 URL のエラーを表示したあと「会場」を選ぶと、配信 URL のエラー表示を消す`, async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
-      await u.online.check();
+      await u.online.check(); // 配信 URL は空のまま
       await u.draft.click();
       await expect(page.getByText(M.MSG001('配信 URL'))).toBeVisible();
       await u.onsite.check();
@@ -892,17 +782,46 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(page.getByText(M.MSG001('配信 URL'))).toBeHidden();
     });
 
-    test('[開催形式の選択を変更 / 入力値の保持] 非表示にした項目の入力値は消さずに残し、選び直すと戻る', async ({ page, api }) => {
-      await openNew(page, api);
+    // 選び直して表示した項目は空のまま（必須に違反したまま）なので、表示したときにバリデーションをやり直す実装なら、エラーがまた出る
+    test('[開催形式の選択を変更 / 選び直して表示した項目のエラー表示 / 会場名のエラー] 会場名のエラーを表示したあと「オンライン」を選び、「会場」を選び直すと、会場名のエラー表示は非表示のままにする', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
-      await u.venue.fill('渋谷オフィス 5F');
+      await u.venue.fill('');
+      await u.draft.click();
+      await expect(page.getByText(M.MSG001('会場名'))).toBeVisible();
+      await u.online.check();
+      await expect(u.onlineUrl).toBeVisible();
+      await u.onsite.check();
+      await expect(u.venue).toBeVisible();
+      await expect(u.venue).toHaveValue('');
+      await expect(page.getByText(M.MSG001('会場名'))).toBeHidden();
+    });
+
+    test('[開催形式の選択を変更 / 選び直して表示した項目のエラー表示 / 配信 URL のエラー] 配信 URL のエラーを表示したあと「会場」を選び、「オンライン」を選び直すと、配信 URL のエラー表示は非表示のままにする', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const u = ui(page);
+      await u.online.check(); // 配信 URL は空のまま
+      await u.draft.click();
+      await expect(page.getByText(M.MSG001('配信 URL'))).toBeVisible();
+      await u.onsite.check();
+      await expect(u.venue).toBeVisible();
+      await u.online.check();
+      await expect(u.onlineUrl).toBeVisible();
+      await expect(u.onlineUrl).toHaveValue('');
+      await expect(page.getByText(M.MSG001('配信 URL'))).toBeHidden();
+    });
+
+    test('[開催形式の選択を変更 / 入力値の保持] 非表示にした項目の入力値は消さずに残し、選び直すと戻る', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const u = ui(page);
+      await u.venue.fill('品川オフィス 3F'); // 初期値と違う値にして、初期値に戻っていないことも確かめる
       await u.online.check();
       await u.onsite.check();
-      await expect(u.venue).toHaveValue('渋谷オフィス 5F');
+      await expect(u.venue).toHaveValue('品川オフィス 3F');
     });
 
     test('[タグの選択を変更 / 4 つ目を選んだとき] 4 つ目を選ぶと、そのチェックを外す', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       for (const tag of ['初心者向け', 'ハンズオン', '交流']) await u.tag(tag).check();
       await u.tag('無料').click();
@@ -911,14 +830,14 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test('[タグの選択を変更 / 3 つ以下のとき] 3 つ目までは、選んだチェックを外さない', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       for (const tag of ['初心者向け', 'ハンズオン', '交流']) await u.tag(tag).click();
       for (const tag of ['初心者向け', 'ハンズオン', '交流']) await expect(u.tag(tag)).toBeChecked();
     });
 
     test(`[タグの選択を変更 / 4 つ目を選んだとき] 4 つ目を選ぶと、${q(M.MSG011('タグ', 3))}を表示する`, async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       for (const tag of ['初心者向け', 'ハンズオン', '交流']) await u.tag(tag).check();
       await u.tag('無料').click();
@@ -926,7 +845,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test(`[タグの選択を変更 / 3 つ以下のとき / タグのエラーの消去] ${q(M.MSG011('タグ', 3))}を表示したあと選択を 1 つ外すと、タグのエラー表示を消す`, async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       for (const tag of ['初心者向け', 'ハンズオン', '交流']) await u.tag(tag).check();
       await u.tag('無料').click();
@@ -965,10 +884,9 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of titleCases) {
       test(`[タイトル ${c.cond}] タイトルに${c.input}を入れてフォーカスを外すと、${c.error ? `${q(c.error)}を表示する` : 'エラーを表示しない'}`, async ({ page, api }) => {
-        await openNew(page, api);
+        await openEdit(page, api, draftEvent);
         const u = ui(page);
         if (c.error) {
-          await u.title.fill('仮');
           await u.title.fill(c.value);
           await u.title.blur();
           await expect(page.getByText(c.error)).toBeVisible();
@@ -985,7 +903,7 @@ test.describe('SCR-002 イベント編集', () => {
     }
 
     test(`[タイトル 優先順位] 「2 文字以上」と「使える文字」に同時に違反すると、上の行の ${q(M.MSG003('タイトル', 2))}だけを表示する`, async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       await ui(page).title.fill('😀'); // 1 文字（「2 文字以上」に違反）かつ絵文字（「使える文字」に違反）
       await ui(page).title.blur();
       await expect(page.getByText(M.MSG003('タイトル', 2))).toBeVisible();
@@ -993,7 +911,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test('[タイトル エラーの消去] エラーのあと正しい値にしてフォーカスを外すと、タイトルのエラー表示を消す', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.title.fill('A');
       await u.title.blur();
@@ -1003,22 +921,21 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(page.getByText(M.MSG003('タイトル', 2))).toBeHidden();
     });
 
+    // 「参加者数以上」は、参加者のいるイベント（publishedEvent。参加者 18 人）で確かめる。draftEvent は参加者が 0 人で、違反する値を作れないため
     const capacityCases = [
-      { cond: '必須', input: '空', value: '', event: undefined, error: M.MSG001('定員') },
-      { cond: '1〜999', input: '0', value: '0', event: undefined, error: M.MSG009('定員', 1, 999) },
-      { cond: '1〜999 境目', input: '1', value: '1', event: undefined, error: null },
-      { cond: '1〜999 境目', input: '999', value: '999', event: undefined, error: null },
+      { cond: '必須', input: '空', value: '', event: draftEvent, error: M.MSG001('定員') },
+      { cond: '1〜999', input: '0', value: '0', event: draftEvent, error: M.MSG009('定員', 1, 999) },
+      { cond: '1〜999 境目', input: '1', value: '1', event: draftEvent, error: null },
+      { cond: '1〜999 境目', input: '999', value: '999', event: draftEvent, error: null },
       { cond: '参加者数以上', input: '参加者数 − 1（17）', value: '17', event: publishedEvent, error: M.MSG010(18) },
       { cond: '参加者数以上 境目', input: '参加者数（18）', value: '18', event: publishedEvent, error: null },
     ];
     for (const c of capacityCases) {
-      const where = c.event ? '編集で' : '新規作成で';
+      const where = c.event.participantCount > 0 ? `参加者が ${c.event.participantCount} 人のイベントで、` : '';
       test(`[定員 ${c.cond}] ${where}定員に ${c.input} を入力すると、${c.error ? `${q(c.error)}を表示する` : 'エラーを表示しない'}`, async ({ page, api }) => {
-        if (c.event) await openEdit(page, api, c.event);
-        else await openNew(page, api);
+        await openEdit(page, api, c.event);
         const u = ui(page);
         if (c.error) {
-          await u.capacity.fill('5');
           await u.capacity.fill(c.value);
           await expect(page.getByText(c.error)).toBeVisible();
         } else {
@@ -1033,7 +950,7 @@ test.describe('SCR-002 イベント編集', () => {
 
     test.fixme(`[定員 1〜999] 1000 を入力すると ${q(M.MSG009('定員', 1, 999))}を表示する（入力可能最大文字数が 3 で、4 桁を入力できないため確かめられない）`, async () => {});
 
-    test(`[定員 優先順位] 編集で「1〜999」と「参加者数以上」に同時に違反すると、上の行の ${q(M.MSG009('定員', 1, 999))}だけを表示する`, async ({ page, api }) => {
+    test(`[定員 優先順位] 「1〜999」と「参加者数以上」に同時に違反すると、上の行の ${q(M.MSG009('定員', 1, 999))}だけを表示する`, async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
       await ui(page).capacity.fill('0'); // 範囲外、かつ参加者数（18）より小さい
       await expect(page.getByText(M.MSG009('定員', 1, 999))).toBeVisible();
@@ -1041,7 +958,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test('[定員 エラーの消去] エラーのあと正しい値を入力すると、定員のエラー表示を消す', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.capacity.fill('0');
       await expect(page.getByText(M.MSG009('定員', 1, 999))).toBeVisible();
@@ -1049,20 +966,24 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(page.getByText(M.MSG009('定員', 1, 999))).toBeHidden();
     });
 
+    // 定員には初期値が入っているので、空にしてから入力する
     test('[定員 入力可能最大文字数] 4 桁目を入力しても入らない', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).capacity.fill('');
       await ui(page).capacity.pressSequentially('1234');
       await expect(ui(page).capacity).toHaveValue('123');
     });
 
     test('[定員 入力可能文字種] 半角数字以外は受け付けない', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).capacity.fill('');
       await ui(page).capacity.pressSequentially('1a2');
       await expect(ui(page).capacity).toHaveValue('12');
     });
 
     test('[定員 入力可能文字種（備考: 変換）] 全角数字は入力中に半角へ変換する', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).capacity.fill('');
       await ui(page).capacity.pressSequentially('１２');
       await expect(ui(page).capacity).toHaveValue('12');
     });
@@ -1072,20 +993,22 @@ test.describe('SCR-002 イベント編集', () => {
     test.fixme('[定員 バリデーション（共通ルール: IME の変換中）] 変換を確定するまではバリデーションを行わない（Playwright で IME の変換中を再現しにくいため）', async () => {});
 
     test('[定員 入力可能最大文字数（共通ルール: 貼り付け）] 4 桁以上をまとめて入力すると、3 桁で切り詰める', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).capacity.fill('');
       await ui(page).capacity.focus();
       await page.keyboard.insertText('12345');
       await expect(ui(page).capacity).toHaveValue('123');
     });
 
     test('[定員 入力可能文字種（共通ルール: 貼り付け）] 使えない文字を含めてまとめて入力すると、その文字を取り除く', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).capacity.fill('');
       await ui(page).capacity.focus();
       await page.keyboard.insertText('1a2');
       await expect(ui(page).capacity).toHaveValue('12');
     });
 
-    // 「下書き保存」ボタン押下のバリデーションのチェック表。新規作成で必須項目を正しく埋めてから 1 項目だけ崩し、「下書き保存」を押す
+    // 「下書き保存」ボタン押下のバリデーションのチェック表。必須項目が正しく埋まっている下書きを開き、1 項目だけ崩して「下書き保存」を押す
     const submitCases: { cond: string; input: string; error: string | null; setup: (page: Page) => Promise<void> }[] = [
       { cond: '概要 200 文字以内', input: '概要に 201 文字', error: M.MSG004('概要', 200), setup: (p) => ui(p).summary.fill('あ'.repeat(201)) },
       { cond: '概要 200 文字以内 境目', input: '概要に 200 文字', error: null, setup: (p) => ui(p).summary.fill('あ'.repeat(200)) },
@@ -1110,7 +1033,7 @@ test.describe('SCR-002 イベント編集', () => {
         error: M.MSG007('配信 URL'),
         setup: async (p) => {
           await ui(p).online.check();
-          await ui(p).onlineUrl.fill('http://meet.example.com/go');
+          await ui(p).onlineUrl.fill('http://meet.example.com/autumn');
         },
       },
       {
@@ -1119,7 +1042,7 @@ test.describe('SCR-002 イベント編集', () => {
         error: null,
         setup: async (p) => {
           await ui(p).online.check();
-          await ui(p).onlineUrl.fill('https://meet.example.com/go');
+          await ui(p).onlineUrl.fill('https://meet.example.com/autumn');
         },
       },
       { cond: '開催日 必須', input: '開催日を空', error: M.MSG001('開催日'), setup: (p) => ui(p).startDate.fill('') },
@@ -1128,24 +1051,29 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of submitCases) {
       test(`[${c.cond}] ${c.input}にして「下書き保存」を押すと、${c.error ? `${q(c.error)}を表示し、API を呼ばない` : 'エラーを表示せず、API を呼ぶ'}`, async ({ page, api }) => {
-        await openNew(page, api);
-        const post = api.on('POST /events', { status: 201, body: createdEvent });
-        api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-        await fillValidNew(page);
+        await openEdit(page, api, draftEvent);
+        const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
         await c.setup(page);
         await ui(page).draft.click();
         if (c.error) {
           await expect(page.getByText(c.error)).toBeVisible();
-          expect(post.requests).toHaveLength(0);
+          expect(put.requests).toHaveLength(0);
         } else {
-          await expect.poll(() => post.requests.length).toBe(1);
+          await expect.poll(() => put.requests.length).toBe(1);
         }
       });
     }
 
+    test(`[会場名 優先順位] 「100 文字以内」と「使える文字」に同時に違反すると、上の行の ${q(M.MSG004('会場名', 100))}だけを表示する`, async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await ui(page).venue.fill(`${'あ'.repeat(100)}😀`); // 101 文字（「100 文字以内」に違反）かつ絵文字（「使える文字」に違反）
+      await ui(page).draft.click();
+      await expect(page.getByText(M.MSG004('会場名', 100))).toBeVisible();
+      await expect(page.getByText(M.MSG005('会場名'))).toBeHidden();
+    });
+
     test(`[配信 URL 優先順位] 「使える文字」と「https:// で始まる URL 形式」に同時に違反すると、上の行の ${q(M.MSG006('配信 URL'))}だけを表示する`, async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       await ui(page).online.check();
       await ui(page).onlineUrl.fill('ｈｔｔｐｓ://meet'); // 全角文字（「使える文字」に違反）かつ https:// で始まらない（形式に違反）
       await ui(page).draft.click();
@@ -1153,28 +1081,19 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(page.getByText(M.MSG007('配信 URL'))).toBeHidden();
     });
 
-    test(`[会場名 優先順位] 「100 文字以内」と「使える文字」に同時に違反すると、上の行の ${q(M.MSG004('会場名', 100))}だけを表示する`, async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
-      await ui(page).venue.fill(`${'あ'.repeat(100)}😀`); // 101 文字（「100 文字以内」に違反）かつ絵文字（「使える文字」に違反）
-      await ui(page).draft.click();
-      await expect(page.getByText(M.MSG004('会場名', 100))).toBeVisible();
-      await expect(page.getByText(M.MSG005('会場名'))).toBeHidden();
-    });
+    test.fixme('[配信 URL 文字数の上限]（TBD: 配信 URL の最大文字数は何文字か）', async () => {});
 
-    test('[共通ルール 送信時に前後の空白を取り除くか / タイトル] タイトルの前後に空白を付けて保存すると、取り除いた値を送る', async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-      await fillValidNew(page);
-      await ui(page).title.fill('  Go 勉強会  ');
+    test(`[共通ルール 改行を 1 文字と数えるか / 概要] 改行を含めて 201 文字になると、${q(M.MSG004('概要', 200))}を表示する`, async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
+      await ui(page).summary.fill(`${'あ'.repeat(100)}\n${'あ'.repeat(100)}`); // 200 文字 + 改行 1 文字
       await ui(page).draft.click();
-      await expect.poll(() => post.requests.length).toBe(1);
-      expect(post.last().body.title).toBe('Go 勉強会');
+      await expect(page.getByText(M.MSG004('概要', 200))).toBeVisible();
+      expect(put.requests).toHaveLength(0);
     });
 
     test('[共通ルール 文字数のバリデーション時に前後の空白を取り除くか / タイトル] 前後の空白を除いて 50 文字なら、「50 文字以内」のエラーにならない', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.title.fill('あ'.repeat(51));
       await u.title.blur();
@@ -1184,55 +1103,47 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(page.getByText(M.MSG004('タイトル', 50))).toBeHidden();
     });
 
-    test(`[共通ルール 改行を 1 文字と数えるか / 概要] 改行を含めて 201 文字になると、${q(M.MSG004('概要', 200))}を表示する`, async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      await fillValidNew(page);
-      await ui(page).summary.fill(`${'あ'.repeat(100)}\n${'あ'.repeat(100)}`); // 200 文字 + 改行 1 文字
+    test('[共通ルール 送信時に前後の空白を取り除くか / タイトル] タイトルの前後に空白を付けて保存すると、取り除いた値を送る', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
+      await ui(page).title.fill('  Go 勉強会  ');
       await ui(page).draft.click();
-      await expect(page.getByText(M.MSG004('概要', 200))).toBeVisible();
-      expect(post.requests).toHaveLength(0);
+      await expect.poll(() => put.requests.length).toBe(1);
+      expect(put.last().body.title).toBe('Go 勉強会');
     });
 
-    test.fixme('[配信 URL 文字数の上限]（TBD: 配信 URL の最大文字数は何文字か）', async () => {});
-
     test(`[「下書き保存」ボタン押下 / タイトルのバリデーション] 送信時にもタイトルのバリデーションを行う（1 文字で「下書き保存」を押すと ${q(M.MSG003('タイトル', 2))}を表示し、API を呼ばない）`, async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       await ui(page).title.fill('A');
       await ui(page).draft.click();
       await expect(page.getByText(M.MSG003('タイトル', 2))).toBeVisible();
-      expect(post.requests).toHaveLength(0);
+      expect(put.requests).toHaveLength(0);
     });
 
     test(`[「下書き保存」ボタン押下 / 定員のバリデーション] 送信時にも定員のバリデーションを行う（0 で「下書き保存」を押すと ${q(M.MSG009('定員', 1, 999))}を表示し、API を呼ばない）`, async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       await ui(page).capacity.fill('0');
       await ui(page).draft.click();
       await expect(page.getByText(M.MSG009('定員', 1, 999))).toBeVisible();
-      expect(post.requests).toHaveLength(0);
+      expect(put.requests).toHaveLength(0);
     });
 
     test('[「下書き保存」ボタン押下 / 非表示の項目] オンラインのとき、非表示の会場名が空でもチェックしない', async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
       const u = ui(page);
       await u.venue.fill('');
       await u.online.check();
-      await u.onlineUrl.fill('https://meet.example.com/go');
+      await u.onlineUrl.fill('https://meet.example.com/autumn');
       await u.draft.click();
-      await expect.poll(() => post.requests.length).toBe(1);
+      await expect.poll(() => put.requests.length).toBe(1);
       await expect(page.getByText(M.MSG001('会場名'))).toBeHidden();
     });
 
     test('[「下書き保存」ボタン押下 / エラーの消去] 送信時、エラーのなくなった項目のエラー表示を消し、残っている項目のエラーは表示する', async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.venue.fill('');
       await u.startDate.fill('');
@@ -1250,14 +1161,13 @@ test.describe('SCR-002 イベント編集', () => {
       { item: '概要', message: M.MSG004('概要', 200), breakIt: (u) => u.summary.fill('あ'.repeat(201)), fixIt: (u) => u.summary.fill('あ'.repeat(200)) },
       { item: 'カテゴリ', message: M.MSG002('カテゴリ'), breakIt: (u) => u.category.selectOption({ label: '選択してください' }), fixIt: (u) => u.category.selectOption({ label: '勉強会' }) },
       { item: '会場名', message: M.MSG001('会場名'), breakIt: (u) => u.venue.fill(''), fixIt: (u) => u.venue.fill('渋谷オフィス 5F') },
-      { item: '配信 URL', message: M.MSG001('配信 URL'), breakIt: (u) => u.online.check(), fixIt: (u) => u.onlineUrl.fill('https://meet.example.com/go') },
+      { item: '配信 URL', message: M.MSG001('配信 URL'), breakIt: (u) => u.online.check(), fixIt: (u) => u.onlineUrl.fill('https://meet.example.com/autumn') },
       { item: '開催日', message: M.MSG001('開催日'), breakIt: (u) => u.startDate.fill(''), fixIt: (u) => u.startDate.fill('2026-10-20') },
     ];
     for (const c of clearCases) {
       test(`[${c.item} エラーの消去] 送信時のエラーのあと正しい値にして「下書き保存」を押すと、${c.item}のエラー表示を消す`, async ({ page, api }) => {
-        await openNew(page, api);
-        api.on('POST /events', { status: 403, body: apiError('forbidden') });
-        await fillValidNew(page);
+        await openEdit(page, api, draftEvent);
+        api.on('PUT /events/{eventId}', { status: 403, body: apiError('forbidden') });
         const u = ui(page);
         await c.breakIt(u);
         await u.draft.click();
@@ -1270,8 +1180,7 @@ test.describe('SCR-002 イベント編集', () => {
     }
 
     test('[「下書き保存」ボタン押下 / スクロール] 送信時にエラーがあれば、最初のエラー項目までスクロールする', async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       await ui(page).title.fill('A'); // 最初のエラー項目を、画面のいちばん上の入力項目（タイトル）にする
       await scrollDownAndClick(page, ui(page).draft);
       await expect(page.getByText(M.MSG003('タイトル', 2))).toBeVisible();
@@ -1280,26 +1189,24 @@ test.describe('SCR-002 イベント編集', () => {
 
     test(`[「公開する」ボタン押下 / 下書き保存と同じバリデーション] 「公開する」でも下書き保存と同じバリデーションを行う（概要 201 文字で ${q(M.MSG004('概要', 200))}を表示し、API を呼ばない）`, async ({ page, api }) => {
       // 必須項目が空だと「公開する」は非活性（「公開する」ボタンの活性条件）なので、必須以外の条件で確かめる
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: createdEvent });
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, status: 'published' } });
       await ui(page).summary.fill('あ'.repeat(201));
       await ui(page).publish.click();
       await expect(page.getByText(M.MSG004('概要', 200))).toBeVisible();
-      expect(post.requests).toHaveLength(0);
+      expect(put.requests).toHaveLength(0);
     });
 
     test('[「公開する」ボタン押下 / 非表示の項目] オンラインのとき、非表示の会場名が空でも「公開する」でチェックしない', async ({ page, api }) => {
-      await openNew(page, api);
-      const post = api.on('POST /events', { status: 201, body: { ...createdEvent, status: 'published' } });
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, status: 'published' } });
       const u = ui(page);
       await u.venue.fill('');
       await u.online.check();
-      await u.onlineUrl.fill('https://meet.example.com/go');
-      api.allowUnmockedCalls(); // 201 で一覧へ遷移するため
+      await u.onlineUrl.fill('https://meet.example.com/autumn');
+      api.allowUnmockedCalls(); // 200 で一覧へ遷移するため
       await u.publish.click();
-      await expect.poll(() => post.requests.length).toBe(1);
+      await expect.poll(() => put.requests.length).toBe(1);
     });
 
     test('[「更新する」ボタン押下 / 編集不可の項目] 公開中で編集不可の開催日が今日より前でも、「更新する」でチェックしない', async ({ page, api }) => {
@@ -1313,9 +1220,9 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('画面項目の条件・値', () => {
-    test('[初期フォーカス（新規作成）] 新規作成で開くと、タイトルにフォーカスがある', async ({ page, api }) => {
-      await openNew(page, api);
-      await expect(ui(page).title).toBeFocused();
+    test('[document.title] 開くと、ページのタイトルを「イベントを編集」にする', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await expect(page).toHaveTitle('イベントを編集');
     });
 
     test('[エラー表示 表示条件] 初期表示では、どのエラー表示も表示しない', async ({ page, api }) => {
@@ -1335,20 +1242,8 @@ test.describe('SCR-002 イベント編集', () => {
       for (const m of messages) await expect(page.getByText(m)).toBeHidden();
     });
 
-    const titleCases = [
-      { name: '新規作成', title: 'イベントを作成', event: undefined as Event | undefined },
-      { name: '編集', title: 'イベントを編集', event: draftEvent as Event | undefined },
-    ];
-    for (const c of titleCases) {
-      test(`[document.title（${c.name}）] ${c.name}で開くと、ページのタイトルを「${c.title}」にする`, async ({ page, api }) => {
-        if (c.event) await openEdit(page, api, c.event);
-        else await openNew(page, api);
-        await expect(page).toHaveTitle(c.title);
-      });
-    }
-
     test('[共通ルール アクセシビリティ / 入力項目のエラーの説明] タイトルのエラーの内容は、タイトルの入力欄の説明として伝わる', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       await ui(page).title.fill('A');
       await ui(page).title.blur();
       await expect(page.getByText(M.MSG003('タイトル', 2))).toBeVisible();
@@ -1366,8 +1261,7 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of submitFocusCases) {
       test(`[共通ルール アクセシビリティ / 送信時のエラーでのフォーカス / 「${c.name}」ボタン] エラーがあるまま「${c.name}」を押すと、最初のエラー項目のタイトルにフォーカスを移す`, async ({ page, api }) => {
-        await openNew(page, api);
-        await fillValidNew(page);
+        await openEdit(page, api, draftEvent);
         await ui(page).title.fill('A');
         await ui(page)[c.button].click();
         await expect(page.getByText(M.MSG003('タイトル', 2))).toBeVisible();
@@ -1407,12 +1301,12 @@ test.describe('SCR-002 イベント編集', () => {
         await expect(u.dialog).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(u.dialog).toBeHidden();
-        await expect(page).toHaveURL(new RegExp(`/events/${draftEvent.id}/edit$`));
+        await staysOn(page, draftEvent);
       });
     }
 
     test('[共通ルール アクセシビリティ / Tab キーの順序] タイトルから Tab キーを押すと、概要、カテゴリの順にフォーカスが移る', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.title.focus();
       await page.keyboard.press('Tab');
@@ -1421,12 +1315,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.category).toBeFocused();
     });
 
-    test('[見出し 文言] 新規作成なら「イベントを作成」と表示する', async ({ page, api }) => {
-      await openNew(page, api);
-      await expect(ui(page).heading('イベントを作成')).toBeVisible();
-    });
-
-    test('[見出し 文言] 編集なら「イベントを編集」と表示する', async ({ page, api }) => {
+    test('[見出し 表示内容] 「イベントを編集」と表示する', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).heading('イベントを編集')).toBeVisible();
     });
@@ -1437,26 +1326,16 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 'closed' as const, label: '終了' },
     ];
     for (const s of statusLabels) {
-      test(`[ステータス 表示形式 / ステータス 表示条件] 編集で status が ${s.status} なら「${s.label}」と表示する`, async ({ page, api }) => {
+      test(`[ステータス 表示形式] status が ${s.status} なら「${s.label}」と表示する`, async ({ page, api }) => {
         await openEdit(page, api, { ...draftEvent, status: s.status });
-        await expect(page.getByText(s.label, { exact: true })).toBeVisible();
+        await expect(ui(page).status(s.label)).toBeVisible();
       });
     }
 
-    test('[ステータス 表示条件] 新規作成では表示しない', async ({ page, api }) => {
-      await openNew(page, api);
-      for (const s of statusLabels) await expect(page.getByText(s.label, { exact: true })).toHaveCount(0);
-    });
-
-    test('[主催者の見出し 表示条件 / 主催者 表示条件] 編集なら、見出しの「主催」と organizerName を表示する', async ({ page, api }) => {
+    test('[主催者の見出し 表示内容 / 主催者 表示内容] 見出しの「主催」と organizerName を表示する', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).organizerLabel).toBeVisible();
       await expect(ui(page).organizer(draftEvent.organizerName)).toBeVisible();
-    });
-
-    test('[主催者の見出し 表示条件 / 主催者 表示条件] 新規作成では、見出しの「主催」を表示しない', async ({ page, api }) => {
-      await openNew(page, api);
-      await expect(ui(page).organizerLabel).toBeHidden();
     });
 
     test('[主催者 省略表記 境目] organizerName が 30 文字ちょうどなら省略しない', async ({ page, api }) => {
@@ -1479,7 +1358,7 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of placeholderCases) {
       test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
-        await openNew(page, api);
+        await openEdit(page, api, draftEvent);
         if ('online' in c) await ui(page).online.check(); // No.23 は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
@@ -1491,18 +1370,21 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of formatValueCases) {
       test(`[開催形式 対応表] 「${c.label}」を選んで保存すると、format に ${c.value} を送る`, async ({ page, api }) => {
-        await openNew(page, api);
-        const post = api.on('POST /events', { status: 201, body: createdEvent });
-        api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-        await fillValidNew(page);
+        // 「会場」は「オンライン」の、「オンライン」は「会場」のイベントを開いて選び直す（初期値のままでは、選んだことにならないため）
+        const event: Event = c.value === 'onsite' ? { ...draftEvent, format: 'online', venueName: undefined, onlineUrl: 'https://meet.example.com/autumn' } : draftEvent;
+        await openEdit(page, api, event);
+        const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
         const u = ui(page);
-        if (c.value === 'online') {
+        if (c.value === 'onsite') {
+          await u.onsite.check();
+          await u.venue.fill('渋谷オフィス 5F');
+        } else {
           await u.online.check();
-          await u.onlineUrl.fill('https://meet.example.com/go');
+          await u.onlineUrl.fill('https://meet.example.com/autumn');
         }
         await u.draft.click();
-        await expect.poll(() => post.requests.length).toBe(1);
-        expect(post.last().body.format).toBe(c.value);
+        await expect.poll(() => put.requests.length).toBe(1);
+        expect(put.last().body.format).toBe(c.value);
       });
     }
 
@@ -1552,89 +1434,82 @@ test.describe('SCR-002 イベント編集', () => {
     ];
     for (const c of tagValueCases) {
       test(`[タグ 対応表] 「${c.label}」を選んで保存すると、tags に ${c.value} を送る`, async ({ page, api }) => {
-        await openNew(page, api);
-        const post = api.on('POST /events', { status: 201, body: createdEvent });
-        api.on('GET /events/{eventId}', { status: 200, body: createdEvent });
-        await fillValidNew(page);
+        await openEdit(page, api, draftEvent);
+        const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
         await ui(page).tag(c.label).check();
         await ui(page).draft.click();
-        await expect.poll(() => post.requests.length).toBe(1);
-        expect(post.last().body.tags).toEqual([c.value]);
+        await expect.poll(() => put.requests.length).toBe(1);
+        expect(put.last().body.tags).toEqual([c.value]);
       });
     }
 
     const notifyVisibleCases = [
-      { name: '編集で status が published', event: publishedEvent as Event | undefined, visible: true },
-      { name: '編集で status が draft', event: draftEvent as Event | undefined, visible: false },
-      { name: '新規作成', event: undefined, visible: false },
+      { status: 'published', event: publishedEvent, visible: true },
+      { status: 'draft', event: draftEvent, visible: false },
     ];
     for (const c of notifyVisibleCases) {
-      test(`[参加者への通知 表示条件] ${c.name}なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
-        if (c.event) await openEdit(page, api, c.event);
-        else await openNew(page, api);
+      test(`[参加者への通知 表示条件] status が ${c.status} なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
+        await openEdit(page, api, c.event);
         if (c.visible) await expect(ui(page).notify).toBeVisible();
         else await expect(ui(page).notify).toBeHidden();
       });
     }
 
     const draftVisibleCases = [
-      { name: '新規作成', event: undefined as Event | undefined, visible: true },
-      { name: '編集で status が draft', event: draftEvent as Event | undefined, visible: true },
-      { name: '編集で status が published', event: publishedEvent as Event | undefined, visible: false },
+      { status: 'draft', event: draftEvent, visible: true },
+      { status: 'published', event: publishedEvent, visible: false },
     ];
     for (const c of draftVisibleCases) {
-      test(`[「下書き保存」ボタン 表示条件] ${c.name}なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
-        if (c.event) await openEdit(page, api, c.event);
-        else await openNew(page, api);
+      test(`[「下書き保存」ボタン 表示条件] status が ${c.status} なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
+        await openEdit(page, api, c.event);
         if (c.visible) await expect(ui(page).draft).toBeVisible();
         else await expect(ui(page).draft).toBeHidden();
       });
     }
 
     test('[「下書き保存」ボタン 活性条件] タイトルが空なら非活性', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      await ui(page).title.fill('');
       await expect(ui(page).draft).toBeDisabled();
     });
 
     test('[「下書き保存」ボタン 活性条件] タイトルが 1 文字以上なら活性', async ({ page, api }) => {
-      await openNew(page, api);
+      await openEdit(page, api, draftEvent);
+      // いったん空にして非活性にしてから、1 文字を入れる
+      await ui(page).title.fill('');
+      await expect(ui(page).draft).toBeDisabled();
       await ui(page).title.fill('A');
       await expect(ui(page).draft).toBeEnabled();
     });
 
     const buttonLabelCases = [
-      { name: '新規作成', event: undefined as Event | undefined, label: '公開する' },
-      { name: 'status が draft', event: draftEvent as Event | undefined, label: '公開する' },
-      { name: 'status が published', event: publishedEvent as Event | undefined, label: '更新する' },
+      { status: 'draft', event: draftEvent, label: '公開する' },
+      { status: 'published', event: publishedEvent, label: '更新する' },
     ];
     for (const c of buttonLabelCases) {
-      test(`[「公開する」／「更新する」ボタン 文言] ${c.name}なら「${c.label}」と表示する`, async ({ page, api }) => {
-        if (c.event) await openEdit(page, api, c.event);
-        else await openNew(page, api);
+      test(`[「公開する」／「更新する」ボタン 文言] status が ${c.status} なら「${c.label}」と表示する`, async ({ page, api }) => {
+        await openEdit(page, api, c.event);
         await expect(page.getByRole('button', { name: c.label, exact: true })).toBeVisible();
       });
     }
 
     test('[「公開する」／「更新する」ボタン 活性条件] 表示中の必須項目がすべて入力されていれば活性', async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       await expect(ui(page).publish).toBeEnabled();
     });
 
     test('[「公開する」／「更新する」ボタン 活性条件] 表示中の必須項目が 1 つでも空なら非活性', async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       await ui(page).venue.fill('');
       await expect(ui(page).publish).toBeDisabled();
     });
 
     test('[「公開する」／「更新する」ボタン 活性条件] 非表示の必須項目（会場名）が空でも、表示中の必須項目が入力されていれば活性', async ({ page, api }) => {
-      await openNew(page, api);
-      await fillValidNew(page);
+      await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.venue.fill('');
       await u.online.check();
-      await u.onlineUrl.fill('https://meet.example.com/go');
+      await u.onlineUrl.fill('https://meet.example.com/autumn');
       await expect(u.publish).toBeEnabled();
     });
 
@@ -1645,17 +1520,12 @@ test.describe('SCR-002 イベント編集', () => {
       { name: 'organizer で他の人が主催', user: users.organizer, organizerId: 'u-other', visible: false },
     ];
     for (const c of deleteVisibleCases) {
-      test(`[「削除」ボタン 表示条件] 編集で ${c.name}なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
+      test(`[「削除」ボタン 表示条件] ${c.name}なら${c.visible ? '表示する' : '表示しない'}`, async ({ page, api }) => {
         await openEdit(page, api, { ...draftEvent, organizerId: c.organizerId }, c.user);
         if (c.visible) await expect(ui(page).del).toBeVisible();
         else await expect(ui(page).del).toBeHidden();
       });
     }
-
-    test('[「削除」ボタン 表示条件] 新規作成では表示しない', async ({ page, api }) => {
-      await openNew(page, api);
-      await expect(ui(page).del).toBeHidden();
-    });
 
     test('[「削除」ボタン 活性条件] participantCount が 0 なら活性', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
@@ -1716,8 +1586,38 @@ test.describe('SCR-002 イベント編集', () => {
   });
 
   test.describe('遷移', () => {
+    /**
+     * タイトルを変えて「下書き保存」を押し、保存に成功するまで待つ。
+     * 保存した内容が「入力内容に変更があるかどうか」の基準になるので、このあとは、保存した値と同じなら「変更なし」
+     */
+    async function changeAndSaveDraft(page: Page, api: ApiMock) {
+      const title = '保存したタイトル';
+      api.on('PUT /events/{eventId}', { status: 200, body: { ...savedDraft, title } });
+      await ui(page).title.fill(title);
+      await ui(page).draft.click();
+      await expect(page.getByText(M.MSG013)).toBeVisible();
+    }
+
     test('[「← 一覧へ戻る」リンク押下 / 入力内容に変更がないとき] 入力内容に変更がなければ、離脱の確認を出さずに同じタブでイベント一覧へ遷移する', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
+      api.allowUnmockedCalls();
+      await ui(page).back.click();
+      await toList(page);
+    });
+
+    test('[「← 一覧へ戻る」リンク押下 / 入力内容に変更がないとき] 値を変えたあと初期表示のときの値に戻すと、離脱の確認を出さずにイベント一覧へ遷移する', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const u = ui(page);
+      await u.title.fill('変更したタイトル');
+      await u.title.fill(draftEvent.title);
+      api.allowUnmockedCalls();
+      await u.back.click();
+      await toList(page);
+    });
+
+    test('[「← 一覧へ戻る」リンク押下 / 入力内容に変更がないとき / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 値を変えて下書き保存に成功したあと、値を変えなければ、離脱の確認を出さずにイベント一覧へ遷移する', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
       api.allowUnmockedCalls();
       await ui(page).back.click();
       await toList(page);
@@ -1728,7 +1628,16 @@ test.describe('SCR-002 イベント編集', () => {
       await ui(page).title.fill('変更したタイトル');
       await ui(page).back.click();
       await expect(ui(page).dialog.getByText(M.MSG012)).toBeVisible();
-      await expect(page).toHaveURL(new RegExp(`/events/${draftEvent.id}/edit$`));
+      await staysOn(page, draftEvent);
+    });
+
+    test(`[「← 一覧へ戻る」リンク押下 / 入力内容に変更があるとき / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 下書き保存に成功したあとで値を変えると、遷移せずに離脱の確認に ${q(M.MSG012)}を表示する`, async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
+      await ui(page).title.fill('保存したあとに変更したタイトル');
+      await ui(page).back.click();
+      await expect(ui(page).dialog.getByText(M.MSG012)).toBeVisible();
+      await staysOn(page, draftEvent);
     });
 
     test('[離脱の確認で「キャンセル」ボタン押下] 「キャンセル」を押すと、離脱の確認を閉じて画面に残り、入力内容を保つ', async ({ page, api }) => {
@@ -1737,7 +1646,7 @@ test.describe('SCR-002 イベント編集', () => {
       await ui(page).back.click();
       await ui(page).dialogCancel.click();
       await expect(ui(page).dialog).toBeHidden();
-      await expect(page).toHaveURL(new RegExp(`/events/${draftEvent.id}/edit$`));
+      await staysOn(page, draftEvent);
       await expect(ui(page).title).toHaveValue('変更したタイトル');
     });
 
@@ -1774,6 +1683,32 @@ test.describe('SCR-002 イベント編集', () => {
       await closed;
       expect(shown).toBe(false);
     });
+
+    // 「下書き保存」を押す操作が、ブラウザに離脱確認を出させるための「ユーザーの操作」を兼ねる
+    test('[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認 / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 値を変えて下書き保存に成功したあと、値を変えなければ、タブを閉じても離脱確認を出さない', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
+      let shown = false;
+      page.on('dialog', async (d) => {
+        shown = true;
+        await d.dismiss();
+      });
+      const closed = page.waitForEvent('close');
+      await page.close({ runBeforeUnload: true });
+      await closed;
+      expect(shown).toBe(false);
+    });
+
+    test('[ブラウザの戻る・再読み込み・タブを閉じる / 離脱確認 / 「下書き保存」ボタン押下 / PUT /events/{eventId} 200] 下書き保存に成功したあとで値を変えると、タブを閉じるときにブラウザ標準の離脱確認を出す', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      await changeAndSaveDraft(page, api);
+      await ui(page).title.fill('保存したあとに変更したタイトル');
+      const dialog = page.waitForEvent('dialog');
+      await page.close({ runBeforeUnload: true });
+      const d = await dialog;
+      expect(d.type()).toBe('beforeunload');
+      await d.dismiss();
+    });
   });
 
   test.describe('権限', () => {
@@ -1787,7 +1722,7 @@ test.describe('SCR-002 イベント編集', () => {
       test(`[権限 ${v.name} / 初期表示 / member でないとき] ${v.name} なら、${q(M.MSG020)}を表示せず、遷移せずに画面を開ける`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent, v.user);
         await expect(ui(page).heading('イベントを編集')).toBeVisible();
-        await expect(page).toHaveURL(new RegExp(`/events/${draftEvent.id}/edit$`));
+        await staysOn(page, draftEvent);
         await expect(page.getByText(M.MSG020)).toBeHidden();
       });
     }

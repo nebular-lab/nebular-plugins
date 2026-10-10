@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>SCR-004 イベント作成</title>
+  <link rel="stylesheet" href="wireframe.css">
+</head>
+<body>
+
+  <section class="screen" data-title="通常（会場を選択）">
+    <header class="row between" data-no="1">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+
+    <a data-no="2">← 一覧へ戻る</a>
+
+    <h1 data-no="3">イベントを作成</h1>
+
+    <p class="error" data-no="4">通信に失敗しました。時間をおいてもう一度お試しください</p>
+
+    <div class="field"><label data-no="5">タイトル（必須）</label><div data-no="6"><input type="text" placeholder="例: はじめての TypeScript ハンズオン"></div><small class="error" data-no="7">タイトルを入力してください</small></div>
+
+    <div class="field"><label data-no="8">概要</label><div data-no="9"><textarea placeholder="イベントの内容を 200 文字以内で入力"></textarea></div><small class="error" data-no="10">概要は 200 文字以内で入力してください</small></div>
+
+    <div class="field"><label data-no="11">カテゴリ（必須）</label><div data-no="12"><select><option>選択してください</option><option>勉強会</option><option>交流会</option></select></div><small class="error" data-no="13">カテゴリを選択してください</small></div>
+
+    <div class="stack">
+      <span data-no="14">開催形式</span>
+      <div class="row" data-no="15">
+        <label class="check"><input type="radio" name="format" checked>会場</label>
+        <label class="check"><input type="radio" name="format">オンライン</label>
+      </div>
+    </div>
+
+    <div class="field"><label data-no="16">会場名（必須）</label><div data-no="17"><input type="text" placeholder="例: 渋谷オフィス 5F セミナールーム"></div><small class="error" data-no="18">会場名を入力してください</small></div>
+
+    <div class="cols-2">
+      <div class="field"><label data-no="22">開催日（必須）</label><div data-no="23"><input type="date"></div><small class="error" data-no="24">開催日を入力してください</small></div>
+      <div class="field"><label data-no="25">定員（必須）</label><div data-no="26"><input type="number" placeholder="1〜999"></div><small class="error" data-no="27">定員は 1〜999 で入力してください</small></div>
+    </div>
+
+    <div class="stack">
+      <span data-no="28">タグ（3 つまで）</span>
+      <div class="cols-2" data-no="29">
+        <label class="check"><input type="checkbox">初心者向け</label>
+        <label class="check"><input type="checkbox">ハンズオン</label>
+        <label class="check"><input type="checkbox">交流</label>
+        <label class="check"><input type="checkbox">無料</label>
+        <label class="check"><input type="checkbox">英語</label>
+      </div>
+      <small class="error" data-no="30">タグは 3 つまで選べます</small>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="cols-2">
+      <button data-no="31">下書き保存</button>
+      <button class="primary" data-no="32">公開する</button>
+    </div>
+  </section>
+
+  <section class="screen" data-title="オンラインを選択">
+    <header class="row between">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+    <a>← 一覧へ戻る</a>
+    <h1>イベントを作成</h1>
+    <div class="note">タイトル、概要、カテゴリ（通常と同じ）</div>
+    <div class="stack">
+      <span>開催形式</span>
+      <div class="row">
+        <label class="check"><input type="radio" name="format2">会場</label>
+        <label class="check"><input type="radio" name="format2" checked>オンライン</label>
+      </div>
+    </div>
+    <div class="field"><label data-no="19">配信 URL（必須）</label><div data-no="20"><input type="url" placeholder="https://"></div><small class="error" data-no="21">配信 URL は https:// で始まる形式で入力してください</small></div>
+    <div class="note">開催日、定員、タグ、ボタン（通常と同じ）</div>
+  </section>
+
+  <section class="screen" data-title="離脱の確認">
+    <header class="row between">
+      <span class="icon">≡</span>
+      <strong>イベント管理</strong>
+      <span class="icon">人</span>
+    </header>
+    <h1>イベントを作成</h1>
+    <div class="modal">
+      <div class="dialog" data-no="33">
+        <p>入力内容が保存されていません。このページを離れますか？</p>
+        <div class="cols-2">
+          <button data-no="34">キャンセル</button>
+          <button class="primary" data-no="35">離れる</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

@@ -24,7 +24,7 @@ allowed-tools:
 以下の相対パスは、この skill を読み込んだときに示される Base directory（この SKILL.md があるディレクトリ）を起点にする。
 
 - 描き方の規則: [references/flow-rules.md](references/flow-rules.md)
-- サンプル: [../../examples/docs/screens/screen-flow.drawio](../../examples/docs/screens/screen-flow.drawio)（[../../examples/docs/screens/](../../examples/docs/screens/) の 3 画面から作ったもの）
+- サンプル: [../../examples/docs/screens/screen-flow.drawio](../../examples/docs/screens/screen-flow.drawio)（[../../examples/docs/screens/](../../examples/docs/screens/) の 4 画面から作ったもの）
 
 ## 引数
 

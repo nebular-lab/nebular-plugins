@@ -21,7 +21,7 @@ Claude Code で次を実行する。
 | `/write-screen-wireframe` | ワイヤーフレーム（簡易 HTML）。1 画面 1 ファイル。部品に番号を振る |
 | `/write-screen-spec` | 画面設計書（Markdown）。1 画面 1 ファイル。ワイヤーフレームの番号と OpenAPI 定義をもとに、画面項目・初期表示時の処理・アクションを書く |
 | `/write-screen-flow` | 画面遷移図（draw.io）。すべての画面設計書から、どのボタン・リンクでどの画面へ移るかを 1 枚にまとめる |
-| `/write-screen-e2e` | Playwright の E2E テスト。画面設計書からテストケースを洗い出し、API をモックしたテストコードを生成する |
+| `/write-screen-playwright-test` | Playwright のテスト。画面設計書からテストケースを洗い出し、API をモックしたテストコードを生成する |
 
 ### 使う順番
 
@@ -29,7 +29,7 @@ Claude Code で次を実行する。
 2. `/write-screen-wireframe` で画面の見た目と部品番号を決める。
 3. `/write-screen-spec` で画面設計書を書く。
 4. 画面がそろってきたら `/write-screen-flow` で画面遷移図を作る。
-5. `/write-screen-e2e` で画面ごとのテストを作る。
+5. `/write-screen-playwright-test` で画面ごとのテストを作る。
 
 4 と 5 はどちらが先でもよい。
 
@@ -39,11 +39,11 @@ Claude Code で次を実行する。
 
 | 直したもの | やり直すもの |
 | --- | --- |
-| ワイヤーフレーム（部品を足した・消した） | `/write-screen-spec`（部品番号の付け替え）→ `/write-screen-flow`、`/write-screen-e2e` |
+| ワイヤーフレーム（部品を足した・消した） | `/write-screen-spec`（部品番号の付け替え）→ `/write-screen-flow`、`/write-screen-playwright-test` |
 | 画面設計書の遷移（遷移先、ボタン・リンクの文言） | `/write-screen-flow` |
-| 画面設計書の内容（処理、バリデーション、条件、メッセージ） | `/write-screen-e2e` |
-| 共通ルール | 食い違う画面の `/write-screen-spec` → `/write-screen-e2e` |
-| メッセージ一覧の文言 | そのメッセージを使っている画面の `/write-screen-e2e` |
+| 画面設計書の内容（処理、バリデーション、条件、メッセージ） | `/write-screen-playwright-test` |
+| 共通ルール | 食い違う画面の `/write-screen-spec` → `/write-screen-playwright-test` |
+| メッセージ一覧の文言 | そのメッセージを使っている画面の `/write-screen-playwright-test` |
 
 ### 作られるファイル
 
@@ -61,15 +61,15 @@ Claude Code で次を実行する。
 
 ### サンプル
 
-イベント管理の 3 画面（一覧、編集、詳細）で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
+イベント管理の 4 画面（一覧、編集、詳細、作成）で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
 
 - [docs/screens/](plugins/screen-design/examples/docs/screens/): 画面設計書、ワイヤーフレーム、共有ファイル、画面遷移図
 - [docs/api/openapi.yaml](plugins/screen-design/examples/docs/api/openapi.yaml): API 定義
-- [e2e/](plugins/screen-design/examples/e2e/): 生成した E2E テスト
+- [playwright-test/](plugins/screen-design/examples/playwright-test/): 生成した Playwright テスト
 
 ## 開発
 
-プラグインの中の TypeScript（E2E テストのサンプルとモックの補助関数）を型チェックする。
+プラグインの中の TypeScript（Playwright テストのサンプルとモックの補助関数）を型チェックする。
 
 ```bash
 npm install

@@ -66,17 +66,18 @@
     <button data-no="37">削除</button>
   </section>
 
-  <section class="screen" data-title="新規作成（会場を選択）">
+  <section class="screen" data-title="下書きを編集（会場を選択）">
     <header class="row between">
       <span class="icon">≡</span>
       <strong>イベント管理</strong>
       <span class="icon">人</span>
     </header>
     <a>← 一覧へ戻る</a>
-    <h1>イベントを作成</h1>
-    <div class="field"><label>タイトル（必須）</label><input type="text" placeholder="例: はじめての TypeScript ハンズオン"></div>
-    <div class="field"><label>概要</label><textarea placeholder="イベントの内容を 200 文字以内で入力"></textarea></div>
-    <div class="field"><label>カテゴリ（必須）</label><select><option>選択してください</option></select></div>
+    <div class="row between">
+      <h1>イベントを編集</h1>
+      <span class="box">下書き</span>
+    </div>
+    <div class="note">主催者、タイトル、概要、カテゴリ（通常と同じ）</div>
     <div class="stack">
       <span>開催形式</span>
       <div class="row">
@@ -84,17 +85,14 @@
         <label class="check"><input type="radio" name="format2">オンライン</label>
       </div>
     </div>
-    <div class="field"><label data-no="19">会場名（必須）</label><div data-no="20"><input type="text" placeholder="例: 渋谷オフィス 5F セミナールーム"></div><small class="error" data-no="21">会場名を入力してください</small></div>
-    <div class="cols-2">
-      <div class="field"><label>開催日（必須）</label><input type="date"></div>
-      <div class="field"><label>定員（必須）</label><input type="number" placeholder="1〜999"></div>
-    </div>
-    <div class="note">タグ（通常と同じ）</div>
+    <div class="field"><label data-no="19">会場名（必須）</label><div data-no="20"><input type="text" value="渋谷オフィス 5F" placeholder="例: 渋谷オフィス 5F セミナールーム"></div><small class="error" data-no="21">会場名を入力してください</small></div>
+    <div class="note">開催日、定員、タグ（通常と同じ）</div>
     <div class="spacer"></div>
     <div class="cols-2">
       <button data-no="35">下書き保存</button>
       <button class="primary">公開する</button>
     </div>
+    <button>削除</button>
   </section>
 
   <section class="screen" data-title="削除の確認">
