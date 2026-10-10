@@ -19,7 +19,7 @@ allowed-tools:
 
 - バックエンドとは通信しない。ブラウザからの API 通信（fetch / XHR）をすべてモックする（[assets/api-mock.ts](assets/api-mock.ts)）。
 - サーバー側で API を呼ぶ画面（SSR）と、API のモックだけでは開けない認証が必要な画面は対象外。
-- 部品は、ワイヤーフレームの文言と部品の種類から、役割と文言（`getByRole`、`getByLabel`）で特定する。
+- 部品は、ワイヤーフレームの文言と設計書のタグから、役割と文言（`getByRole`、`getByLabel`）で特定する。
 - 生成したテストは実行しない。型チェックと、テスト一覧の出力（`playwright test --list`）までを行う。画面がまだ実装されていなくても使えるようにするため。
 
 以下の相対パスは、この skill を読み込んだときに示される Base directory（この SKILL.md があるディレクトリ）を起点にする。
@@ -33,7 +33,7 @@ allowed-tools:
 
 `/write-screen-e2e [画面 ID・設計書のパス]`
 
-画面 ID がなければ、画面一覧（`README.md`）を見せてどの画面かを聞く。
+画面 ID がなければ、画面一覧（`overview.md` の「画面一覧」）を見せてどの画面かを聞く。
 
 ## 手順
 
@@ -41,7 +41,7 @@ allowed-tools:
 
 1. 画面設計書（`SCR-NNN_<slug>.md`）とワイヤーフレーム（`SCR-NNN_<slug>.html`）を探して読む。既定の置き場所は `docs/screens/`。ワイヤーフレームがなければ、設計書だけで進めてよいかを確認する（部品の文言が推測になるため）。
 2. 設計書の「API 定義」にある OpenAPI 定義から、この画面が呼ぶ操作のスキーマ（リクエスト・レスポンス・エラーの形）を読む。定義が大きいときは Grep で該当の操作だけを読む。
-3. 画面一覧（`README.md`）の「入力の共通ルール」を読む（入力制限のケースで使う）。
+3. 共有ファイルを読む。メッセージ一覧（`messages.md`。設計書が参照している ID の文言と変数）と、共通ルール（`common-rules.md`。「入力」の節と「アクセシビリティ」のルールから、ケースを作る）。
 4. [references/test-case-rules.md](references/test-case-rules.md) と、`write-screen-spec` の [writing-rules.md](../write-screen-spec/references/writing-rules.md) を読む。
 
 ### 2. Playwright の環境を確かめる
@@ -75,20 +75,28 @@ allowed-tools:
 1. 3. の骨組みの `test.fixme()` を、中身のある `test()` に置き換えていく。構成（メッセージ、テストデータ、部品、画面を開く関数、`test.use()`、`test.describe` の分け方）は [references/test-case-rules.md](references/test-case-rules.md) の「ファイルの構成」とサンプルに合わせる。
 2. 3. で合意したテスト名は変えない。最終的にも `test.fixme()` のまま残すものだけ残す。
 3. ファイルの先頭のコメントに、設計書・ワイヤーフレームのパス、出典の読み方、実装についての前提（test-case-rules.md の「実装についての前提」）を書く。
-4. 既存のテストファイルを更新する場合は、設計書から消えたケースを削除し、増えたケースを足す。手で足されたテスト（出典のないテスト）は消さずに残し、報告で伝える。
+4. 設計書の保存先の `overview.md` の「画面一覧」で、この画面の行の「E2E テスト」の列を、テストファイルへのリンクにする（`[SCR-002_event-edit.spec.ts](../../e2e/screens/SCR-002_event-edit.spec.ts)`。パスは `overview.md` から見た相対パス）。
+5. 既存のテストファイルを更新する場合は、設計書から消えたケースを削除し、増えたケースを足す。設計書の部品番号が変わっていたら、コメントの部品番号（`// No.7`）も直す。手で足されたテスト（出典のないテスト）は消さずに残し、報告で伝える。
 
 ### 5. 型チェックとテスト一覧
 
 1. 型チェックをする。`playwright test --list` は型を見ないので、必ず `tsc` を使う。
    - プロジェクトの `tsconfig.json` が、テストのファイルを含んでいれば `npx tsc --noEmit -p <tsconfig>`。
-   - 含んでいない、または `tsconfig.json` がなければ、一時的な tsconfig を scratchpad などプロジェクトの外に作って `npx tsc --noEmit -p <一時的な tsconfig>` する。中身は `strict: true`、`moduleResolution: "Bundler"`、`types: ["node"]`、`include` にテストファイルと `support/api-mock.ts`。終わったら消す。
+   - 含んでいない、または `tsconfig.json` がなければ、一時的な tsconfig を `testDir` の中に作って（例: `<testDir>/tsconfig.e2e-check.json`）、`npx tsc --noEmit -p <その tsconfig>` する。プロジェクトの外に置くと、`@playwright/test` や `@types/node` を `node_modules` から見つけられず失敗するため。終わったら消す。中身は次のとおり。
+
+     ```json
+     {
+       "compilerOptions": { "strict": true, "noEmit": true, "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler", "types": ["node"], "skipLibCheck": true },
+       "include": ["screens/SCR-NNN_<slug>.spec.ts", "support/api-mock.ts"]
+     }
+     ```
    - `tsc` や `@types/node` がプロジェクトになければ、入れてよいかをユーザーに確認する。
 2. `npx playwright test --list <ファイル>` でテスト一覧を出し、3. で合意した件数と一致することを確かめる。
 3. 失敗したら直して繰り返す。テストは実行しない。
 
 ### 6. 漏れを確かめる
 
-[references/coverage-check.md](references/coverage-check.md) のプロンプトを埋めてサブエージェントに渡し、ケースの漏れと誤りを探させる。「漏れ」「誤り」を直し、なくなるまで繰り返す。
+[references/coverage-check.md](references/coverage-check.md) のプロンプトを埋めてサブエージェントに渡し、ケースの漏れと誤りを探させる。「漏れ」「誤り」を直し、もう一度チェックする。チェックは最大 3 回までにし、それでも残ったものは報告でユーザーに伝える。
 
 ### 7. 報告
 
@@ -99,5 +107,6 @@ allowed-tools:
 - 型チェックと漏れチェックの結果
 - 実行に必要なこと（アプリの起動方法、`baseURL`、`E2E_API_BASE_URL` の値）
 - 設計書に反映したほうがよい点（期待値を決めるためにユーザーに確認したことなど）
+- 設計書を直したら、この skill をもう一度使ってテストを更新すること
 
 コミットはしない。
