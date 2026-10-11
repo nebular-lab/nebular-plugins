@@ -21,7 +21,7 @@ Claude Code で次を実行する。
 | `/write-screen-wireframe` | ワイヤーフレーム（簡易 HTML）。1 画面 1 ファイル。部品に番号を振る |
 | `/write-screen-spec` | 画面設計書（Markdown）。1 画面 1 ファイル。ワイヤーフレームの番号と OpenAPI 定義をもとに、画面項目・初期表示時の処理・アクションを書く |
 | `/write-screen-flow` | 画面遷移図（draw.io）。すべての画面設計書から、どのボタン・リンクでどの画面へ移るかを 1 枚にまとめる |
-| `/write-screen-playwright-test` | Playwright のテスト。画面設計書からテストケースを洗い出し、API をモックしたテストコードを生成する |
+| `/write-screen-playwright-test` | Playwright のテスト。画面設計書からテストケースを洗い出し、API をモックしたテストコードを生成する。自動で確かめられないケースは、画面ごとの手動テスト（Markdown）に書く |
 
 ### 使う順番
 
@@ -59,16 +59,17 @@ Claude Code で次を実行する。
 | `screen-flow.drawio` | 画面遷移図 |
 | `wireframe.css` | ワイヤーフレームの共通スタイル |
 | `api-mock.ts` | Playwright テストで API をモックする補助 |
-| `HDR-NNN_<slug>/` | 共通ヘッダー（複数の画面で使うヘッダー。種類ごとに、ワイヤーフレーム・設計書・Playwright テスト） |
+| `HDR-NNN_<slug>/` | 共通ヘッダー（複数の画面で使うヘッダー。種類ごとに、ワイヤーフレーム・設計書・Playwright テスト・手動テスト） |
 | `SCR-NNN_<slug>/SCR-NNN_<slug>.html` | ワイヤーフレーム |
 | `SCR-NNN_<slug>/SCR-NNN_<slug>.md` | 画面設計書 |
 | `SCR-NNN_<slug>/SCR-NNN_<slug>.spec.ts` | Playwright テスト |
+| `SCR-NNN_<slug>/SCR-NNN_<slug>.manual-test.md` | 手動テスト（自動で確かめられないケース。あるときだけ） |
 
 ### サンプル
 
 イベント管理の 5 画面（一覧、編集、詳細、作成、ログイン）と、共通ヘッダー 2 種類で作った例が [plugins/screen-design/examples/](plugins/screen-design/examples/) にある。
 
-- [docs/screens/](plugins/screen-design/examples/docs/screens/): 共有ファイル、画面遷移図と、画面ごとのフォルダ（ワイヤーフレーム、画面設計書、Playwright テスト）
+- [docs/screens/](plugins/screen-design/examples/docs/screens/): 共有ファイル、画面遷移図と、画面ごとのフォルダ（ワイヤーフレーム、画面設計書、Playwright テスト、手動テスト）
 - [docs/api/openapi.yaml](plugins/screen-design/examples/docs/api/openapi.yaml): API 定義
 
 ## 開発
