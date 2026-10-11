@@ -17,7 +17,7 @@
 
 | ヘッダー ID | ヘッダー名 | ワイヤーフレーム | 設計書 | Playwright テスト | 手動テスト |
 | --- | --- | --- | --- | --- | --- |
-| HDR-001 | ログイン後のヘッダー | [HDR-001_app-header.html](HDR-001_app-header/HDR-001_app-header.html) | [HDR-001_app-header.md](HDR-001_app-header/HDR-001_app-header.md) | [HDR-001_app-header.spec.ts](HDR-001_app-header/HDR-001_app-header.spec.ts) | - |
+| HDR-001 | ログイン後のヘッダー | [HDR-001_app-header.html](HDR-001_app-header/HDR-001_app-header.html) | [HDR-001_app-header.md](HDR-001_app-header/HDR-001_app-header.md) | [HDR-001_app-header.spec.ts](HDR-001_app-header/HDR-001_app-header.spec.ts) | [HDR-001_app-header.manual-test.md](HDR-001_app-header/HDR-001_app-header.manual-test.md) |
 | HDR-002 | ログイン前のヘッダー | [HDR-002_public-header.html](HDR-002_public-header/HDR-002_public-header.html) | [HDR-002_public-header.md](HDR-002_public-header/HDR-002_public-header.md) | - | - |
 
 ## 画面一覧

@@ -12,24 +12,26 @@
  *   [「下書き保存」ボタン押下 / PUT /events/{eventId} 409] … アクション「「下書き保存」ボタン押下」のレスポンスの表の 409 の行
  *   [開催形式の選択を変更 / 「会場」を選んだとき]      … アクション「開催形式の選択を変更」の手順（API を呼ばない）
  *   [タイトル 50 文字以内]                              … バリデーションのチェック表の、タイトルの「50 文字以内」の行
- *   [定員 入力可能最大文字数]                           … 画面項目「定員」の入力可能最大文字数
+ *   [定員 maxlength]                                    … 画面項目「定員」の maxlength の列（type、placeholder、autocomplete、inputmode、href も同じ形）
+ *   [「削除」ボタン disabled]                           … 画面項目「「削除」」の disabled の列（非活性にする条件）
  *   [「下書き保存」ボタン 表示条件]                     … 画面項目「「下書き保存」」の表示条件
  *   [閲覧権限 admin]                                        … 3. 閲覧権限 の admin の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
  * - API はブラウザから fetch か XHR で呼ぶ（すべてモックし、バックエンドとは通信しない）
- * - 入力欄はラベルと関連付けられている
+ * - 入力欄はラベルと関連付けられている（見出しの for は、入力欄を見出しの文言で探せることで確かめている）
  * - 確認ダイアログ（削除の確認、離脱の確認）はダイアログとして見つかり（役割が dialog か alertdialog）、同時には 1 つしか表示されない
  * - 見出しは heading のロールを持つ
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
+ * - 設計書の画面項目に書かれた属性（type、placeholder、maxlength、autocomplete、inputmode、href）は、書かれた値になっていることを確かめる
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
  * - メッセージ（トーストを含む）は画面上のテキストとして 1 か所に表示され、遷移後も確かめられる間は表示されている
- * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「入力可能最大文字数」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
+ * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「maxlength」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
  *
  * バリデーションや入力できる範囲など、イベントの状態によらないケースは、下書きのイベント（draftEvent）を開いて確かめる。
  * 下書きなら「下書き保存」ボタンが表示され、開催日も編集できるため。保存しても画面に残るので、送った値も確かめやすい。
  */
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { test, expect, deferred, type ApiMock } from '../api-mock';
 
 // ---- メッセージ（docs/screens/messages.md）------------------------------------
@@ -348,7 +350,7 @@ test.describe('SCR-002 イベント編集', () => {
       expect(event.last().pathParams).toEqual({ eventId: publishedEvent.id });
     });
 
-    test('[初期表示 / GET /events/{eventId} 200 / 入力項目 初期値] 各入力項目に、取得したイベントの値を入れる（参加者への通知は未選択）', async ({ page, api }) => {
+    test('[初期表示 / GET /events/{eventId} 200 / 入力項目 value・checked] 各入力項目に、取得したイベントの値を入れる（参加者への通知は未選択）', async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
       const u = ui(page);
       await expect(u.title).toHaveValue(publishedEvent.title);
@@ -364,7 +366,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.notify).not.toBeChecked();
     });
 
-    test('[初期表示 / GET /events/{eventId} 200 / 開催形式・会場名 初期値] 会場のイベントなら、「会場」を選び、会場名に venueName を入れる', async ({ page, api }) => {
+    test('[初期表示 / GET /events/{eventId} 200 / 開催形式 checked・会場名 value] 会場のイベントなら、「会場」を選び、会場名に venueName を入れる', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).onsite).toBeChecked();
       await expect(ui(page).venue).toHaveValue(draftEvent.venueName!);
@@ -985,7 +987,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     // 定員には初期値が入っているので、空にしてから入力する
-    test('[定員 入力可能最大文字数] 4 桁目を入力しても入らない', async ({ page, api }) => {
+    test('[定員 maxlength] 4 桁目を入力しても入らない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await ui(page).capacity.fill('');
       await ui(page).capacity.pressSequentially('1234');
@@ -1006,7 +1008,7 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(ui(page).capacity).toHaveValue('12');
     });
 
-    test('[定員 入力可能最大文字数（共通ルール: 貼り付け）] 4 桁以上をまとめて入力すると、3 桁で切り詰める', async ({ page, api }) => {
+    test('[定員 maxlength（共通ルール: 貼り付け）] 4 桁以上をまとめて入力すると、3 桁で切り詰める', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await ui(page).capacity.fill('');
       await ui(page).capacity.focus();
@@ -1202,7 +1204,7 @@ test.describe('SCR-002 イベント編集', () => {
     });
 
     test(`[「公開する」ボタン押下 / 下書き保存と同じバリデーション] 「公開する」でも下書き保存と同じバリデーションを行う（概要 201 文字で ${q(M.MSG004('概要', 200))}を表示し、API を呼ばない）`, async ({ page, api }) => {
-      // 必須項目が空だと「公開する」は非活性（「公開する」ボタンの活性条件）なので、必須以外の条件で確かめる
+      // 必須項目が空だと「公開する」は非活性（「公開する」ボタンの disabled）なので、必須以外の条件で確かめる
       await openEdit(page, api, draftEvent);
       const put = api.on('PUT /events/{eventId}', { status: 200, body: { ...draftEvent, status: 'published' } });
       await ui(page).summary.fill('あ'.repeat(201));
@@ -1367,12 +1369,72 @@ test.describe('SCR-002 イベント編集', () => {
       { item: '定員', field: 'capacity' as const, text: '1〜999' },
     ];
     for (const c of placeholderCases) {
-      test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
+      test(`[${c.item} placeholder] placeholder は「${c.text}」`, async ({ page, api }) => {
         await openEdit(page, api, draftEvent);
         if ('online' in c) await ui(page).online.check(); // No.24 は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
     }
+
+    // 画面項目の表に書かれた属性（値が - の属性と、placeholder 以外）。placeholder は上のケース、disabled は下の各項目のケースで確かめる
+    type Ui = ReturnType<typeof ui>;
+    const openDeleteConfirm = async (u: Ui) => {
+      await u.del.click();
+      await expect(u.dialog).toBeVisible();
+    };
+    const openLeaveConfirm = async (u: Ui) => {
+      await u.title.fill('変更したタイトル');
+      await u.back.click();
+      await expect(u.dialog).toBeVisible();
+    };
+    const attributeCases: { item: string; attr: string; value: string; event?: Event; prepare?: (u: Ui) => Promise<unknown>; parts: (u: Ui) => Locator[] }[] = [
+      { item: 'タイトル', attr: 'type', value: 'text', parts: (u) => [u.title] },
+      { item: '開催形式', attr: 'type', value: 'radio', parts: (u) => [u.onsite, u.online] },
+      { item: '会場名', attr: 'type', value: 'text', parts: (u) => [u.venue] },
+      { item: '配信 URL', attr: 'type', value: 'url', prepare: (u) => u.online.check(), parts: (u) => [u.onlineUrl] },
+      { item: '開催日', attr: 'type', value: 'date', parts: (u) => [u.startDate] },
+      { item: '定員', attr: 'type', value: 'text', parts: (u) => [u.capacity] },
+      { item: 'タグ', attr: 'type', value: 'checkbox', parts: (u) => ['初心者向け', 'ハンズオン', '交流', '無料', '英語'].map((name) => u.tag(name)) },
+      { item: '参加者への通知', attr: 'type', value: 'checkbox', event: publishedEvent, parts: (u) => [u.notify] },
+      { item: '定員', attr: 'maxlength', value: '3', parts: (u) => [u.capacity] },
+      { item: 'タイトル', attr: 'autocomplete', value: 'off', parts: (u) => [u.title] },
+      { item: '概要', attr: 'autocomplete', value: 'off', parts: (u) => [u.summary] },
+      { item: '会場名', attr: 'autocomplete', value: 'off', parts: (u) => [u.venue] },
+      { item: '配信 URL', attr: 'autocomplete', value: 'off', prepare: (u) => u.online.check(), parts: (u) => [u.onlineUrl] },
+      { item: '定員', attr: 'autocomplete', value: 'off', parts: (u) => [u.capacity] },
+      { item: '定員', attr: 'inputmode', value: 'numeric', parts: (u) => [u.capacity] },
+      { item: '「← 一覧へ戻る」リンク', attr: 'href', value: '/events', parts: (u) => [u.back] },
+      { item: '「下書き保存」ボタン', attr: 'type', value: 'button', parts: (u) => [u.draft] },
+      { item: '「公開する」／「更新する」ボタン', attr: 'type', value: 'button', parts: (u) => [u.publish] },
+      { item: '「削除」ボタン', attr: 'type', value: 'button', parts: (u) => [u.del] },
+      { item: '削除の確認の「キャンセル」ボタン', attr: 'type', value: 'button', prepare: openDeleteConfirm, parts: (u) => [u.dialogCancel] },
+      { item: '削除の確認の「削除する」ボタン', attr: 'type', value: 'button', prepare: openDeleteConfirm, parts: (u) => [u.dialogDelete] },
+      { item: '離脱の確認の「キャンセル」ボタン', attr: 'type', value: 'button', prepare: openLeaveConfirm, parts: (u) => [u.dialogCancel] },
+      { item: '離脱の確認の「離れる」ボタン', attr: 'type', value: 'button', prepare: openLeaveConfirm, parts: (u) => [u.dialogLeave] },
+    ];
+    for (const c of attributeCases) {
+      test(`[${c.item} ${c.attr}] ${c.attr} は ${c.value}`, async ({ page, api }) => {
+        await openEdit(page, api, c.event ?? draftEvent);
+        const u = ui(page);
+        if (c.prepare) await c.prepare(u);
+        for (const part of c.parts(u)) await expect(part).toHaveAttribute(c.attr, c.value);
+      });
+    }
+
+    // type が submit のボタンはないので、入力欄で Enter キーを押しても、どのボタンのアクションも動かない。
+    // Enter キーのあとでタイトルを変えて「下書き保存」を押し、送られたのがボタンを押したときの 1 回だけであることで確かめる
+    test('[ボタン type（submit のボタンがない）] タイトルにフォーカスがあるときに Enter キーを押しても、何も送信せず（PUT /events/{eventId} を呼ばず）、画面に残る', async ({ page, api }) => {
+      await openEdit(page, api, draftEvent);
+      const put = api.on('PUT /events/{eventId}', { status: 200, body: savedDraft });
+      const u = ui(page);
+      await u.title.fill('Enter キーを押したときのタイトル');
+      await u.title.press('Enter');
+      await u.title.fill('ボタンを押したときのタイトル');
+      await u.draft.click();
+      await expect(page.getByText(M.MSG013)).toBeVisible();
+      expect(put.requests.map((r) => r.body.title)).toEqual(['ボタンを押したときのタイトル']);
+      await staysOn(page, draftEvent);
+    });
 
     const formatValueCases = [
       { label: '会場', value: 'onsite' },
@@ -1398,13 +1460,13 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[開催形式 活性条件] participantCount が 1 以上なら非活性（開催形式を選べない）', async ({ page, api }) => {
+    test('[開催形式 disabled] participantCount が 1 以上なら非活性にする（開催形式を選べない）', async ({ page, api }) => {
       await openEdit(page, api, { ...draftEvent, participantCount: 1 });
       await expect(ui(page).onsite).toBeDisabled();
       await expect(ui(page).online).toBeDisabled();
     });
 
-    test('[開催形式 活性条件] participantCount が 0 なら活性（開催形式を選べる）', async ({ page, api }) => {
+    test('[開催形式 disabled] participantCount が 0 なら非活性にしない（開催形式を選べる）', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).onsite).toBeEnabled();
       await expect(ui(page).online).toBeEnabled();
@@ -1416,7 +1478,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 'draft' as const, disabled: false },
     ];
     for (const c of startDateCases) {
-      test(`[開催日 活性条件] status が ${c.status} なら開催日は${c.disabled ? '非活性（編集できない）' : '活性（編集できる）'}`, async ({ page, api }) => {
+      test(`[開催日 disabled] status が ${c.status} なら開催日を${c.disabled ? '非活性にする（編集できない）' : '非活性にしない（編集できる）'}`, async ({ page, api }) => {
         await openEdit(page, api, { ...draftEvent, status: c.status });
         if (c.disabled) await expect(ui(page).startDate).toBeDisabled();
         else await expect(ui(page).startDate).toBeEnabled();
@@ -1428,7 +1490,7 @@ test.describe('SCR-002 イベント編集', () => {
       { status: 'published' as const, disabled: false },
     ];
     for (const c of capacityEditCases) {
-      test(`[定員 活性条件] status が ${c.status} なら定員は${c.disabled ? '非活性（編集できない）' : '活性（編集できる）'}`, async ({ page, api }) => {
+      test(`[定員 disabled] status が ${c.status} なら定員を${c.disabled ? '非活性にする（編集できない）' : '非活性にしない（編集できる）'}`, async ({ page, api }) => {
         await openEdit(page, api, { ...publishedEvent, status: c.status });
         if (c.disabled) await expect(ui(page).capacity).toBeDisabled();
         else await expect(ui(page).capacity).toBeEnabled();
@@ -1477,15 +1539,15 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[「下書き保存」ボタン 活性条件] タイトルが空なら非活性', async ({ page, api }) => {
+    test('[「下書き保存」ボタン disabled] タイトルが空なら非活性にする', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await ui(page).title.fill('');
       await expect(ui(page).draft).toBeDisabled();
     });
 
-    test('[「下書き保存」ボタン 活性条件] タイトルが 1 文字以上なら活性', async ({ page, api }) => {
+    test('[「下書き保存」ボタン disabled] タイトルが 1 文字以上なら非活性にしない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
-      // いったん空にして非活性にしてから、1 文字を入れる
+      // いったん空にして非活性にしてから、1 文字を入れる（非活性が解除される側）
       await ui(page).title.fill('');
       await expect(ui(page).draft).toBeDisabled();
       await ui(page).title.fill('A');
@@ -1503,18 +1565,18 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[「公開する」／「更新する」ボタン 活性条件] 表示中の必須項目がすべて入力されていれば活性', async ({ page, api }) => {
+    test('[「公開する」／「更新する」ボタン disabled] 表示中の必須項目がすべて入力されていれば非活性にしない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).publish).toBeEnabled();
     });
 
-    test('[「公開する」／「更新する」ボタン 活性条件] 表示中の必須項目が 1 つでも空なら非活性', async ({ page, api }) => {
+    test('[「公開する」／「更新する」ボタン disabled] 表示中の必須項目が 1 つでも空なら非活性にする', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await ui(page).venue.fill('');
       await expect(ui(page).publish).toBeDisabled();
     });
 
-    test('[「公開する」／「更新する」ボタン 活性条件] 非表示の必須項目（会場名）が空でも、表示中の必須項目が入力されていれば活性', async ({ page, api }) => {
+    test('[「公開する」／「更新する」ボタン disabled] 非表示の必須項目（会場名）が空でも、表示中の必須項目が入力されていれば非活性にしない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       const u = ui(page);
       await u.venue.fill('');
@@ -1537,12 +1599,12 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test('[「削除」ボタン 活性条件] participantCount が 0 なら活性', async ({ page, api }) => {
+    test('[「削除」ボタン disabled] participantCount が 0 なら非活性にしない', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
       await expect(ui(page).del).toBeEnabled();
     });
 
-    test('[「削除」ボタン 活性条件] participantCount が 1 以上なら非活性', async ({ page, api }) => {
+    test('[「削除」ボタン disabled] participantCount が 1 以上なら非活性にする', async ({ page, api }) => {
       await openEdit(page, api, { ...draftEvent, participantCount: 1 });
       await expect(ui(page).del).toBeDisabled();
     });

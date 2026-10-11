@@ -10,6 +10,8 @@
  *   [初期表示 / GET /events/{eventId} 404]   … 5. 初期表示時の処理 の GET /events/{eventId}、レスポンス 404
  *   [「削除」ボタン押下]                      … アクション「「削除」ボタン押下」の手順（API を呼ばない）
  *   [「編集」ボタン 表示条件]                 … 画面項目「「編集」」の表示条件
+ *   [「削除」ボタン disabled]                 … 画面項目「「削除」」の disabled（非活性にする条件）
+ *   [「編集」ボタン type]                     … 画面項目「「編集」」の type（href、その他の属性の scope も同じ形）
  *   [ステータス 表示形式]                     … 画面項目「ステータス」の備考
  *   [閲覧権限 member]                             … 3. 閲覧権限 の member の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
@@ -19,7 +21,9 @@
  * - ボタン・リンク・見出し・表の行は、役割と名前で見つかる
  * - 確認ダイアログ（削除の確認）はダイアログとして見つかる（役割が dialog か alertdialog）
  * - メッセージ（トーストを含む）は画面上のテキストとして 1 か所に表示され、遷移後も確かめられる間は表示されている
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・フォーカスの位置・キー操作の結果で確かめる
+ * - 表の見出しのセルは、設計書のタグのとおり th で、行の中から見つかる
+ * - 設計書の画面項目に書かれた属性（type、href、scope）は、書かれた値になっていることを確かめる
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・フォーカスの位置・キー操作の結果で確かめる
  */
 import type { Page } from '@playwright/test';
 import { test, expect, deferred, type ApiMock } from '../api-mock';
@@ -122,8 +126,10 @@ const ui = (page: Page) => {
     organizerLabel: page.getByText('主催', { exact: true }),
     /** 主催者（No.6）。文言で特定する */
     organizer: (name: string) => page.getByText(name, { exact: true }),
-    /** 表の 1 行。見出しのセル（No.8、11、13、15、17、19）の文言で特定する。データのセルは No.9、12、14、16、18、20 */
+    /** 表の 1 行。見出しのセル（No.8、10、12、14、16、18）の文言で特定する。データのセルは No.9、11、13、15、17、19 */
     row: (label: string) => page.getByRole('row').filter({ hasText: new RegExp(`^\\s*${label}`) }),
+    /** 表の見出しのセル（No.8、10、12、14、16、18）。設計書のタグ（th）で特定する */
+    rowHeading: (label: string) => page.getByRole('row').filter({ hasText: new RegExp(`^\\s*${label}`) }).locator('th'),
     edit: page.getByRole('button', { name: '編集', exact: true }), // No.20
     del: page.getByRole('button', { name: '削除', exact: true }), // No.21
     dialog, // No.23
@@ -404,6 +410,11 @@ test.describe('SCR-003 イベント詳細', () => {
         await open(page, api, draftEvent);
         await expect(ui(page).row(label)).toBeVisible();
       });
+
+      test(`[${label === '参加者' ? '参加者数' : label}の見出し scope] 見出しの「${label}」の scope 属性が row になっている`, async ({ page, api }) => {
+        await open(page, api, draftEvent);
+        await expect(ui(page).rowHeading(label)).toHaveAttribute('scope', 'row');
+      });
     }
 
     test('[概要 表示条件] summary があれば表示する', async ({ page, api }) => {
@@ -493,15 +504,35 @@ test.describe('SCR-003 イベント詳細', () => {
       }
     }
 
-    test('[「削除」ボタン 活性条件] participantCount が 0 なら活性', async ({ page, api }) => {
+    test('[「削除」ボタン disabled] participantCount が 0 なら非活性にしない', async ({ page, api }) => {
       await open(page, api, draftEvent);
       await expect(ui(page).del).toBeEnabled();
     });
 
-    test('[「削除」ボタン 活性条件] participantCount が 1 以上なら非活性', async ({ page, api }) => {
+    test('[「削除」ボタン disabled] participantCount が 1 以上なら非活性にする', async ({ page, api }) => {
       await open(page, api, { ...draftEvent, participantCount: 1 });
       await expect(ui(page).del).toBeDisabled();
     });
+
+    test('[「← 一覧へ戻る」リンク href] href 属性が /events になっている', async ({ page, api }) => {
+      await open(page, api, draftEvent);
+      await expect(ui(page).back).toHaveAttribute('href', '/events');
+    });
+
+    // type。削除の確認の中のボタンは、確認を開いてから確かめる
+    const typeCases = [
+      { item: '「編集」ボタン', key: 'edit' as const, inDialog: false },
+      { item: '「削除」ボタン', key: 'del' as const, inDialog: false },
+      { item: '「キャンセル」ボタン', key: 'dialogCancel' as const, inDialog: true },
+      { item: '「削除する」ボタン', key: 'dialogDelete' as const, inDialog: true },
+    ];
+    for (const c of typeCases) {
+      test(`[${c.item} type] ${c.inDialog ? '削除の確認の' : ''}${c.item}の type 属性が button になっている`, async ({ page, api }) => {
+        await open(page, api, draftEvent);
+        if (c.inDialog) await ui(page).del.click();
+        await expect(ui(page)[c.key]).toHaveAttribute('type', 'button');
+      });
+    }
 
     test('[削除の確認 表示条件 / 「キャンセル」ボタン 表示条件 / 「削除する」ボタン 表示条件] 「削除」を押す前は、確認もその中のボタンも表示しない', async ({ page, api }) => {
       await open(page, api, draftEvent);

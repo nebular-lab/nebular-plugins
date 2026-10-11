@@ -8,7 +8,6 @@
 | document.title | イベント詳細 |
 | 共通ヘッダー | [HDR-001 ログイン後のヘッダー](../HDR-001_app-header/HDR-001_app-header.md)（v1: イベント詳細） |
 | 初期フォーカス | - |
-| Enter キーで動くボタン | - |
 | ワイヤーフレーム | [SCR-003_event-detail.html](SCR-003_event-detail.html) |
 | 更新日 | 2026-10-10 |
 
@@ -37,45 +36,45 @@
 
 ### ボタン・リンク
 
-| No | 項目名 | タグ | 表示条件 | 活性条件 | 備考 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | 「← 一覧へ戻る」 | `a` | 常に表示 | 常に活性 | - |
-| 20 | 「編集」 | `button` | `GET /me` の `role` が `admin` のとき、または `GET /events/{eventId}` の `organizerId` が `GET /me` の `id` と同じとき | 常に活性 | - |
-| 21 | 「削除」 | `button` | No.20 と同じ | `GET /events/{eventId}` の `participantCount` が 0 のとき | - |
-| 26 | 「キャンセル」 | `button` | No.23 を表示しているとき | 常に活性 | - |
-| 27 | 「削除する」 | `button` | No.23 を表示しているとき | 常に活性 | - |
+| No | 項目名 | タグ | `type` | `href` | `target` | 表示条件 | `disabled` | その他の属性 | 備考 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 「← 一覧へ戻る」 | `a` | - | `/events`（SCR-001 イベント一覧） | - | 常に表示 | - | - | - |
+| 20 | 「編集」 | `button` | `button` | - | - | `GET /me` の `role` が `admin` のとき、または `GET /events/{eventId}` の `organizerId` が `GET /me` の `id` と同じとき | - | - | - |
+| 21 | 「削除」 | `button` | `button` | - | - | No.20 と同じ | `GET /events/{eventId}` の `participantCount` が 1 以上のとき | - | - |
+| 26 | 「キャンセル」 | `button` | `button` | - | - | No.23 を表示しているとき | - | - | - |
+| 27 | 「削除する」 | `button` | `button` | - | - | No.23 を表示しているとき | - | - | - |
 
 ### テキスト
 
-| No | 項目名 | タグ | 表示内容 | 表示条件 | 備考 |
-| --- | --- | --- | --- | --- | --- |
-| 3 | 見出し | `h1` | `GET /events/{eventId}` の `title` | 常に表示 | - |
-| 4 | ステータス | `span` | `GET /events/{eventId}` の `status`<br>`draft` は「下書き」、`published` は「公開中」、`closed` は「終了」と表示する | 常に表示 | - |
-| 5 | 主催者の見出し | `small` | 「主催」 | 常に表示 | - |
-| 6 | 主催者 | `small` | `GET /events/{eventId}` の `organizerName` | 常に表示 | 省略表記: 31 文字以上なら、先頭 30 文字のあとに…を付ける |
-| 7 | 概要 | `p` | `GET /events/{eventId}` の `summary` | `GET /events/{eventId}` の `summary` があるとき | - |
-| 8 | カテゴリの見出し | `th` | 「カテゴリ」 | 常に表示 | - |
-| 9 | カテゴリ | `td` | `GET /categories` の `items[]` のうち、`id` が `GET /events/{eventId}` の `categoryId` と同じものの `name` | 常に表示 | - |
-| 10 | 開催形式の見出し | `th` | 「開催形式」 | 常に表示 | - |
-| 11 | 開催形式 | `td` | `GET /events/{eventId}` の `format`<br>`onsite` は「会場」、`online` は「オンライン」と表示する | 常に表示 | - |
-| 12 | 会場の見出し | `th` | 「会場」 | 常に表示 | - |
-| 13 | 会場 | `td` | `GET /events/{eventId}` の `format` が `onsite` のとき、`GET /events/{eventId}` の `venueName`<br>`online` のとき、`GET /events/{eventId}` の `onlineUrl` | 常に表示 | - |
-| 14 | 開催日の見出し | `th` | 「開催日」 | 常に表示 | - |
-| 15 | 開催日 | `td` | `GET /events/{eventId}` の `startDate`<br>`YYYY/MM/DD` で表示する | 常に表示 | - |
-| 16 | 参加者数の見出し | `th` | 「参加者」 | 常に表示 | - |
-| 17 | 参加者数 | `td` | `GET /events/{eventId}` の `participantCount` と `capacity`<br>「{participantCount} / {capacity} 人」で表示する | 常に表示 | - |
-| 18 | タグの見出し | `th` | 「タグ」 | 常に表示 | - |
-| 19 | タグ | `td` | `GET /events/{eventId}` の `tags`<br>`beginner` は「初心者向け」、`hands-on` は「ハンズオン」、`networking` は「交流」、`free` は「無料」、`english` は「英語」と表示する<br>複数あるときは「、」で区切る。1 つもないときは「なし」と表示する | 常に表示 | - |
-| 24 | 削除の確認の見出し | `h2` | MSG-017 の 1 行目 | No.23 と同じ | - |
-| 25 | 削除の確認の文 | `p` | MSG-017 の 2 行目（v1: `GET /events/{eventId}` の `title`） | No.23 と同じ | 省略表記: `GET /events/{eventId}` の `title` が 21 文字以上なら、先頭 20 文字のあとに…を付ける |
+| No | 項目名 | タグ | 表示内容 | 表示条件 | その他の属性 | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3 | 見出し | `h1` | `GET /events/{eventId}` の `title` | 常に表示 | - | - |
+| 4 | ステータス | `span` | `GET /events/{eventId}` の `status`<br>`draft` は「下書き」、`published` は「公開中」、`closed` は「終了」と表示する | 常に表示 | - | - |
+| 5 | 主催者の見出し | `small` | 「主催」 | 常に表示 | - | - |
+| 6 | 主催者 | `small` | `GET /events/{eventId}` の `organizerName` | 常に表示 | - | 省略表記: 31 文字以上なら、先頭 30 文字のあとに…を付ける |
+| 7 | 概要 | `p` | `GET /events/{eventId}` の `summary` | `GET /events/{eventId}` の `summary` があるとき | - | - |
+| 8 | カテゴリの見出し | `th` | 「カテゴリ」 | 常に表示 | `scope="row"` | - |
+| 9 | カテゴリ | `td` | `GET /categories` の `items[]` のうち、`id` が `GET /events/{eventId}` の `categoryId` と同じものの `name` | 常に表示 | - | - |
+| 10 | 開催形式の見出し | `th` | 「開催形式」 | 常に表示 | `scope="row"` | - |
+| 11 | 開催形式 | `td` | `GET /events/{eventId}` の `format`<br>`onsite` は「会場」、`online` は「オンライン」と表示する | 常に表示 | - | - |
+| 12 | 会場の見出し | `th` | 「会場」 | 常に表示 | `scope="row"` | - |
+| 13 | 会場 | `td` | `GET /events/{eventId}` の `format` が `onsite` のとき、`GET /events/{eventId}` の `venueName`<br>`online` のとき、`GET /events/{eventId}` の `onlineUrl` | 常に表示 | - | - |
+| 14 | 開催日の見出し | `th` | 「開催日」 | 常に表示 | `scope="row"` | - |
+| 15 | 開催日 | `td` | `GET /events/{eventId}` の `startDate`<br>`YYYY/MM/DD` で表示する | 常に表示 | - | - |
+| 16 | 参加者数の見出し | `th` | 「参加者」 | 常に表示 | `scope="row"` | - |
+| 17 | 参加者数 | `td` | `GET /events/{eventId}` の `participantCount` と `capacity`<br>「{participantCount} / {capacity} 人」で表示する | 常に表示 | - | - |
+| 18 | タグの見出し | `th` | 「タグ」 | 常に表示 | `scope="row"` | - |
+| 19 | タグ | `td` | `GET /events/{eventId}` の `tags`<br>`beginner` は「初心者向け」、`hands-on` は「ハンズオン」、`networking` は「交流」、`free` は「無料」、`english` は「英語」と表示する<br>複数あるときは「、」で区切る。1 つもないときは「なし」と表示する | 常に表示 | - | - |
+| 24 | 削除の確認の見出し | `h2` | MSG-017 の 1 行目 | No.23 と同じ | - | - |
+| 25 | 削除の確認の文 | `p` | MSG-017 の 2 行目（v1: `GET /events/{eventId}` の `title`） | No.23 と同じ | - | 省略表記: `GET /events/{eventId}` の `title` が 21 文字以上なら、先頭 20 文字のあとに…を付ける |
 
 ### その他
 
-| No | 項目名 | タグ | 表示内容 | 表示条件 | 備考 |
-| --- | --- | --- | --- | --- | --- |
-| 2 | 画面上部のエラー | 実装時に決める | アクションで指定したメッセージ | 「5. 初期表示時の処理」、A5 で切り替える | - |
-| 22 | 読み込み中の表示 | `div` | スピナー | 「5. 初期表示時の処理」で切り替える | 内容の位置に表示する |
-| 23 | 削除の確認 | 実装時に決める | - | A3 で表示し、A4、A5 で閉じる | 表示中は背面の操作をできなくする |
+| No | 項目名 | タグ | 表示内容 | 表示条件 | その他の属性 | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 | 画面上部のエラー | 実装時に決める | アクションで指定したメッセージ | 「5. 初期表示時の処理」、A5 で切り替える | - | - |
+| 22 | 読み込み中の表示 | `div` | スピナー | 「5. 初期表示時の処理」で切り替える | - | 内容の位置に表示する |
+| 23 | 削除の確認 | 実装時に決める | - | A3 で表示し、A4、A5 で閉じる | - | 表示中は背面の操作をできなくする |
 
 ## 5. 初期表示時の処理
 
@@ -136,7 +135,7 @@
 
 ### A1. 「← 一覧へ戻る」リンク押下
 
-1. SCR-001 イベント一覧へ遷移する。
+1. No.1 の `href` へ遷移する。
 
 ### A2. 「編集」ボタン押下
 

@@ -11,8 +11,9 @@
  *   [「下書き保存」ボタン押下 / POST /events リクエスト] … アクション「「下書き保存」ボタン押下」のリクエストの表
  *   [開催形式の選択を変更 / 「会場」を選んだとき]      … アクション「開催形式の選択を変更」の手順（API を呼ばない）
  *   [タイトル 50 文字以内]                              … バリデーションのチェック表の、タイトルの「50 文字以内」の行
- *   [定員 入力可能最大文字数]                           … 画面項目「定員」の入力可能最大文字数
- *   [「下書き保存」ボタン 活性条件]                     … 画面項目「「下書き保存」」の活性条件
+ *   [定員 maxlength]                                    … 画面項目「定員」の maxlength の列
+ *   [「下書き保存」ボタン disabled]                     … 画面項目「「下書き保存」」の disabled の列（非活性にする条件）
+ *   [「下書き保存」ボタン type]                         … 画面項目「「下書き保存」」の type の列（属性の値）
  *   [閲覧権限 admin]                                        … 3. 閲覧権限 の admin の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
@@ -21,9 +22,10 @@
  * - 入力欄はラベルと関連付けられている
  * - 確認ダイアログ（離脱の確認）はダイアログとして見つかる（役割が dialog か alertdialog）
  * - 見出しは heading のロールを持つ
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
+ * - 設計書の画面項目の表に書かれた属性（type、placeholder、maxlength、autocomplete、inputmode、href）は、書かれた値になっている
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
  * - メッセージ（トーストを含む）は画面上のテキストとして 1 か所に表示され、遷移後も確かめられる間は表示されている
- * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「入力可能最大文字数」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
+ * - 入力欄が受け付ける範囲は設計書の「入力可能文字種」「maxlength」と共通ルールのとおり。それ以外は入力でき、バリデーションでエラーになる
  */
 import type { Locator, Page } from '@playwright/test';
 import { test, expect, deferred, type ApiMock, type MockReply } from '../api-mock';
@@ -522,7 +524,7 @@ test.describe('SCR-004 イベント作成', () => {
       expect(cat.requests).toHaveLength(0);
     });
 
-    test('[初期表示 / 入力項目 初期値] 各入力項目に、画面項目の表の初期値を入れる', async ({ page, api }) => {
+    test('[初期表示 / 入力項目 value・checked] 各入力項目を、画面項目の表の value（開催形式とタグは checked）のとおりにする', async ({ page, api }) => {
       await open(page, api);
       const u = ui(page);
       await expect(u.title).toHaveValue('');
@@ -744,7 +746,7 @@ test.describe('SCR-004 イベント作成', () => {
     });
 
     // ---- 定員の入力できる範囲 ----
-    test('[定員 入力可能最大文字数] 4 桁目を入力しても入らない', async ({ page, api }) => {
+    test('[定員 maxlength] 4 桁目を入力しても入らない', async ({ page, api }) => {
       await open(page, api);
       await ui(page).capacity.pressSequentially('1234');
       await expect(ui(page).capacity).toHaveValue('123');
@@ -762,14 +764,14 @@ test.describe('SCR-004 イベント作成', () => {
       await expect(ui(page).capacity).toHaveValue('12');
     });
 
-    test('[定員 入力可能最大文字数 / 共通ルール 入力可能文字種・入力可能最大文字数のある項目への貼り付け] 4 桁以上をまとめて入力すると、3 桁に収める', async ({ page, api }) => {
+    test('[定員 maxlength / 共通ルール 入力可能文字種・maxlength のある項目への貼り付け] 4 桁以上をまとめて入力すると、3 桁に収める', async ({ page, api }) => {
       await open(page, api);
       await ui(page).capacity.focus();
       await page.keyboard.insertText('12345');
       await expect(ui(page).capacity).toHaveValue('123');
     });
 
-    test('[定員 入力可能文字種 / 共通ルール 入力可能文字種・入力可能最大文字数のある項目への貼り付け] 使えない文字を含めてまとめて入力すると、その文字を取り除く', async ({ page, api }) => {
+    test('[定員 入力可能文字種 / 共通ルール 入力可能文字種・maxlength のある項目への貼り付け] 使えない文字を含めてまとめて入力すると、その文字を取り除く', async ({ page, api }) => {
       await open(page, api);
       await ui(page).capacity.focus();
       await page.keyboard.insertText('1a2');
@@ -913,7 +915,7 @@ test.describe('SCR-004 イベント作成', () => {
 
     // ---- 「公開する」ボタン押下 ----
     test(`[「公開する」ボタン押下 / 「下書き保存」ボタン押下のバリデーション] 「公開する」でも下書き保存と同じバリデーションを行う（概要 201 文字で ${q(M.MSG004('概要', 200))}を表示し、API を呼ばない）`, async ({ page, api }) => {
-      // 必須項目が空だと「公開する」は非活性（「公開する」ボタンの活性条件）なので、必須以外の条件で確かめる
+      // 必須項目が空だと「公開する」は非活性（「公開する」ボタンの disabled）なので、必須以外の条件で確かめる
       await open(page, api);
       const post = api.on('POST /events', forbidden);
       await fillValid(page);
@@ -987,12 +989,64 @@ test.describe('SCR-004 イベント作成', () => {
       { item: '定員', field: 'capacity' as const, text: '1〜999' },
     ];
     for (const c of placeholderCases) {
-      test(`[${c.item} プレースホルダー] 「${c.text}」を表示する`, async ({ page, api }) => {
+      test(`[${c.item} placeholder] 「${c.text}」を表示する`, async ({ page, api }) => {
         await open(page, api);
         if (c.online) await ui(page).online.check(); // 配信 URL は「オンライン」のときだけ表示される
         await expect(ui(page)[c.field]).toHaveAttribute('placeholder', c.text);
       });
     }
+
+    // ---- 画面項目の表に書かれた属性 ----
+    // 値が「-」の属性と、タグが「実装時に決める」の部品の属性は、対象にしない。
+    // placeholder は上の [タイトル placeholder] などで確かめている。
+    // label の for は、入力欄を見出しの文言で探せていること（getByLabel）で確かめている
+    const showOnline = (u: UI) => u.online.check(); // 配信 URL は「オンライン」のときだけ表示される
+    const openLeaveDialog = async (u: UI) => {
+      await u.title.fill('変更したタイトル');
+      await u.back.click();
+    };
+    const attributeCases: { item: string; attr: string; value: string; targets: (u: UI) => Locator[]; prepare?: (u: UI) => Promise<unknown> }[] = [
+      { item: 'タイトル', attr: 'type', value: 'text', targets: (u) => [u.title] },
+      { item: '開催形式', attr: 'type', value: 'radio', targets: (u) => [u.onsite, u.online] },
+      { item: '会場名', attr: 'type', value: 'text', targets: (u) => [u.venue] },
+      { item: '配信 URL', attr: 'type', value: 'url', targets: (u) => [u.onlineUrl], prepare: showOnline },
+      { item: '開催日', attr: 'type', value: 'date', targets: (u) => [u.startDate] },
+      { item: '定員', attr: 'type', value: 'text', targets: (u) => [u.capacity] },
+      { item: 'タグ', attr: 'type', value: 'checkbox', targets: (u) => TAGS.map(u.tag) },
+      { item: '定員', attr: 'maxlength', value: '3', targets: (u) => [u.capacity] },
+      { item: 'タイトル', attr: 'autocomplete', value: 'off', targets: (u) => [u.title] },
+      { item: '概要', attr: 'autocomplete', value: 'off', targets: (u) => [u.summary] },
+      { item: '会場名', attr: 'autocomplete', value: 'off', targets: (u) => [u.venue] },
+      { item: '配信 URL', attr: 'autocomplete', value: 'off', targets: (u) => [u.onlineUrl], prepare: showOnline },
+      { item: '定員', attr: 'autocomplete', value: 'off', targets: (u) => [u.capacity] },
+      { item: '定員', attr: 'inputmode', value: 'numeric', targets: (u) => [u.capacity] },
+      { item: '「← 一覧へ戻る」リンク', attr: 'href', value: '/events', targets: (u) => [u.back] },
+      { item: '「下書き保存」ボタン', attr: 'type', value: 'button', targets: (u) => [u.draft] },
+      { item: '「公開する」ボタン', attr: 'type', value: 'button', targets: (u) => [u.publish] },
+      { item: '「キャンセル」ボタン', attr: 'type', value: 'button', targets: (u) => [u.dialogCancel], prepare: openLeaveDialog },
+      { item: '「離れる」ボタン', attr: 'type', value: 'button', targets: (u) => [u.dialogLeave], prepare: openLeaveDialog },
+    ];
+    for (const c of attributeCases) {
+      test(`[${c.item} ${c.attr}] ${c.item}の ${c.attr} 属性は ${c.value}`, async ({ page, api }) => {
+        await open(page, api);
+        const u = ui(page);
+        await c.prepare?.(u);
+        for (const target of c.targets(u)) await expect(target).toHaveAttribute(c.attr, c.value);
+      });
+    }
+
+    test('[「下書き保存」ボタン type / 「公開する」ボタン type] type が submit のボタンはないので、タイトルの入力欄で Enter キーを押しても保存しない', async ({ page, api }) => {
+      await open(page, api);
+      const post = api.on('POST /events', forbidden); // 画面に残る 403 を返す
+      await fillValid(page);
+      const u = ui(page);
+      await u.title.press('Enter');
+      // 続けて「下書き保存」を押し、その 1 回だけが呼ばれたことで、Enter キーでは呼んでいないことを確かめる
+      await u.draft.click();
+      await expect(page.getByText(M.MSG020)).toBeVisible();
+      expect(post.requests).toHaveLength(1);
+      expect(post.last().body.status).toBe('draft');
+    });
 
     // 会場名・配信 URL の表示条件は、[開催形式の選択を変更 / 「会場」を選んだとき / 会場名 表示条件] などで確かめている
 
@@ -1031,31 +1085,31 @@ test.describe('SCR-004 イベント作成', () => {
       });
     }
 
-    test('[「下書き保存」ボタン 活性条件] タイトルが空なら非活性', async ({ page, api }) => {
+    test('[「下書き保存」ボタン disabled] タイトルが空のとき、非活性にする', async ({ page, api }) => {
       await open(page, api);
       await expect(ui(page).draft).toBeDisabled();
     });
 
-    test('[「下書き保存」ボタン 活性条件] タイトルに 1 文字以上入力されていれば活性', async ({ page, api }) => {
+    test('[「下書き保存」ボタン disabled] タイトルに 1 文字以上入力されていれば、非活性にしない', async ({ page, api }) => {
       await open(page, api);
       await ui(page).title.fill('あ');
       await expect(ui(page).draft).toBeEnabled();
     });
 
-    test('[「公開する」ボタン 活性条件] 表示中のタイトル・カテゴリ・会場名・開催日・定員がすべて入力されていれば活性', async ({ page, api }) => {
+    test('[「公開する」ボタン disabled] 表示中のタイトル・カテゴリ・会場名・開催日・定員がすべて入力されていれば、非活性にしない', async ({ page, api }) => {
       await open(page, api);
       await fillValid(page);
       await expect(ui(page).publish).toBeEnabled();
     });
 
-    test('[「公開する」ボタン 活性条件] 表示中の項目が 1 つでも空（会場名が空）なら非活性', async ({ page, api }) => {
+    test('[「公開する」ボタン disabled] 表示中の項目のどれか（会場名）が入力されていないとき、非活性にする', async ({ page, api }) => {
       await open(page, api);
       await fillValid(page);
       await ui(page).venue.fill('');
       await expect(ui(page).publish).toBeDisabled();
     });
 
-    test('[「公開する」ボタン 活性条件] 非表示の会場名が空でも、表示中の項目（配信 URL を含む）がすべて入力されていれば活性', async ({ page, api }) => {
+    test('[「公開する」ボタン disabled] 非表示の会場名が空でも、表示中の項目（配信 URL を含む）がすべて入力されていれば、非活性にしない', async ({ page, api }) => {
       await open(page, api);
       await fillValid(page);
       const u = ui(page);

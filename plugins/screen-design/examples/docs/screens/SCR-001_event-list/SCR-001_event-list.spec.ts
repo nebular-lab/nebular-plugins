@@ -13,8 +13,10 @@
  *   [ブラウザの戻る・進むで、この画面の URL クエリが変わる / キーワード] … アクション「ブラウザの戻る・進むで、この画面の URL クエリが変わる」の手順
  *   [キーワード 50 文字以内]                         … バリデーションのチェック表の、キーワードの「50 文字以内」の行
  *   [クエリパラメータ status 省略]                   … 2. クエリパラメータ の status を省略したとき
- *   [Enter キーで動くボタン]                         … 冒頭の表の「Enter キーで動くボタン」
- *   [「次へ」ボタン 活性条件]                        … 画面項目「「次へ」」の活性条件
+ *   [「検索」ボタン type]                            … 画面項目「「検索」」の type の列
+ *   [「次へ」ボタン disabled]                        … 画面項目「「次へ」」の disabled の列（非活性にする条件）
+ *   [キーワード placeholder]                         … 画面項目「キーワード」の placeholder の列
+ *   [タイトルの見出し scope]                         … 画面項目「タイトルの見出し」の「その他の属性」の scope
  *   [閲覧権限 member]                                    … 3. 閲覧権限 の member の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
@@ -24,7 +26,9 @@
  * - ボタン・リンク・見出し・表・表の行・列の見出しは、役割と名前で見つかる
  * - ステータスのタブはタグが「実装時に決める」なので、文言で特定する。タブはイベントの表より前にある
  * - メッセージは画面上のテキストとして 1 か所に表示される
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
+ * - 設計書の画面項目に書かれた属性（type、placeholder、autocomplete、href、target、scope）は、書かれた値になっていることを確かめる。
+ *   値が「-」の属性と、タグが「実装時に決める」の部品の属性は確かめない。href は、設計書に書かれた形（パスからの形）のまま属性に入っている
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
  * - キーワードは、どの文字も何文字でも入力でき、違反はバリデーションでエラーになる
  */
 import type { Page } from '@playwright/test';
@@ -917,7 +921,7 @@ test.describe('SCR-001 イベント一覧', () => {
 
     // ---- 共通ルール（入力） ----
     // 「改行を 1 文字と数えるか」は、キーワードが 1 行の入力欄なので当てはまらない。
-    // 貼り付け・IME は、入力可能文字種・入力可能最大文字数のある項目も、入力するたびにバリデーションをする項目もないので当てはまらない
+    // 貼り付け・IME は、入力可能文字種・maxlength のある項目も、入力するたびにバリデーションをする項目もないので当てはまらない
     test('[共通ルール 文字数のバリデーション時に前後の空白を取り除くか / キーワード] 前後の空白を除いて 50 文字なら、「50 文字以内」のエラーにならず、API を呼ぶ', async ({ page, api }) => {
       const { events } = await open(page, api);
       const u = ui(page);
@@ -1051,8 +1055,9 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(ui(page).keyword).toBeFocused();
     });
 
-    // 「検索」ボタンは常に活性なので、非活性のときに Enter キーを押すケースはない
-    test('[Enter キーで動くボタン] キーワードに値を入れて Enter キーを押すと、「検索」を押したときと同じ GET /events（keyword に入力値、page に 1）を呼ぶ', async ({ page, api }) => {
+    // ---- type が submit のボタン（Enter キーで動く） ----
+    // 「検索」ボタンは disabled が「-」（非活性にする条件がない）なので、非活性のときに Enter キーを押すケースはない
+    test('[「検索」ボタン type] type が submit なので、キーワードに値を入れて Enter キーを押すと、「検索」を押したときと同じ GET /events（keyword に入力値、page に 1）を呼ぶ', async ({ page, api }) => {
       const { events } = await open(page, api, { query: '?page=3' });
       const u = ui(page);
       await u.keyword.fill('Go');
@@ -1061,12 +1066,63 @@ test.describe('SCR-001 イベント一覧', () => {
     });
 
     // ---- 入力項目 ----
-    test('[キーワード プレースホルダー] 「タイトル・概要で検索」を表示する', async ({ page, api }) => {
+    // value（URL クエリ keyword、なければ空）は [クエリパラメータ keyword]、[クエリパラメータ keyword 省略] で確かめている。
+    // キーワードの見出しの for は、キーワードを見出しで見つけている（getByLabel）ので、どのケースでも確かめている
+    test('[キーワード placeholder] placeholder は「タイトル・概要で検索」になっている', async ({ page, api }) => {
       await open(page, api);
       await expect(ui(page).keyword).toHaveAttribute('placeholder', 'タイトル・概要で検索');
     });
 
+    const keywordAttributeCases = [
+      { attr: 'type', value: 'search' },
+      { attr: 'autocomplete', value: 'off' },
+    ];
+    for (const c of keywordAttributeCases) {
+      test(`[キーワード ${c.attr}] ${c.attr} は ${c.value} になっている`, async ({ page, api }) => {
+        await open(page, api);
+        await expect(ui(page).keyword).toHaveAttribute(c.attr, c.value);
+      });
+    }
+
     // ---- ボタン・リンク ----
+    // 「検索」ボタンの type が submit であること（Enter キーで動くこと）は、上の [「検索」ボタン type] でも確かめている
+    const buttonTypeCases = [
+      { item: '「イベントを作成」ボタン', key: 'create' as const, type: 'button', loadError: false },
+      { item: '「検索」ボタン', key: 'search' as const, type: 'submit', loadError: false },
+      { item: '「前へ」ボタン', key: 'prev' as const, type: 'button', loadError: false },
+      { item: '「次へ」ボタン', key: 'next' as const, type: 'button', loadError: false },
+      { item: '「再読み込み」ボタン', key: 'reload' as const, type: 'button', loadError: true }, // 読み込みのエラーを表示しているときだけ表示する
+    ];
+    for (const c of buttonTypeCases) {
+      test(`[${c.item} type] type 属性は ${c.type} になっている`, async ({ page, api }) => {
+        if (c.loadError) {
+          mockInitial(api);
+          api.on('GET /events', { status: 500 });
+          await page.goto(urlOf());
+          await expect(page.getByText(M.MSG023)).toBeVisible();
+        } else {
+          await open(page, api);
+        }
+        await expect(ui(page)[c.key]).toHaveAttribute('type', c.type);
+      });
+    }
+
+    // リンクを押したときの遷移は、[タイトルのリンク押下]、[「オンライン会場」リンク押下] で確かめている
+    const linkAttributeCases = [
+      { item: 'タイトル', attr: 'href', name: 'href は、その行の id のイベント詳細（/events/{id}）になっている', link: (page: Page) => ui(page).titleLink(onlineEvent.title), value: `/events/${onlineEvent.id}` },
+      { item: '会場', attr: 'href', name: '「オンライン会場」のリンクの href は、その行の onlineUrl になっている', link: (page: Page) => ui(page).onlineLink(onlineEvent.title), value: ONLINE_URL },
+      { item: '会場', attr: 'target', name: '「オンライン会場」のリンクの target は _blank になっている', link: (page: Page) => ui(page).onlineLink(onlineEvent.title), value: '_blank' },
+      { item: 'ヘルプ', attr: 'target', name: 'target は _blank になっている', link: (page: Page) => ui(page).help, value: '_blank' },
+    ];
+    for (const c of linkAttributeCases) {
+      test(`[${c.item} ${c.attr}] ${c.name}`, async ({ page, api }) => {
+        await open(page, api);
+        await expect(c.link(page)).toHaveAttribute(c.attr, c.value);
+      });
+    }
+
+    test.fixme('[ヘルプ href] href は、ヘルプの URL になっている（TBD: ヘルプのリンクの遷移先 URL はどこか）', async () => {});
+
     const roleCases = [
       { role: 'admin' as const, visible: true, also: '' },
       { role: 'organizer' as const, visible: true, also: '' },
@@ -1141,33 +1197,33 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(page.getByText(/ページ（全/)).toBeHidden();
     });
 
-    const pagerEnabledCases = [
-      { item: '「前へ」ボタン', key: 'prev' as const, name: 'page が 2 以上（2 ページ目）なら活性', query: '?page=2', enabled: true },
-      { item: '「前へ」ボタン', key: 'prev' as const, name: 'page が 1 なら非活性', query: '?page=1', enabled: false },
-      { item: '「次へ」ボタン', key: 'next' as const, name: 'page が総ページ数より小さい（3 ページ中の 2 ページ目）なら活性', query: '?page=2', enabled: true },
-      { item: '「次へ」ボタン', key: 'next' as const, name: 'page が総ページ数と同じ（3 ページ中の 3 ページ目）なら非活性', query: '?page=3', enabled: false },
+    const pagerDisabledCases = [
+      { item: '「前へ」ボタン', key: 'prev' as const, name: 'page が 1 なら非活性にする', query: '?page=1', disabled: true },
+      { item: '「前へ」ボタン', key: 'prev' as const, name: 'page が 1 でない（2 ページ目）なら非活性にしない', query: '?page=2', disabled: false },
+      { item: '「次へ」ボタン', key: 'next' as const, name: 'page が総ページ数と同じ（3 ページ中の 3 ページ目）なら非活性にする', query: '?page=3', disabled: true },
+      { item: '「次へ」ボタン', key: 'next' as const, name: 'page が総ページ数より小さい（3 ページ中の 2 ページ目）なら非活性にしない', query: '?page=2', disabled: false },
     ];
-    for (const c of pagerEnabledCases) {
-      test(`[${c.item} 活性条件] ${c.name}`, async ({ page, api }) => {
+    for (const c of pagerDisabledCases) {
+      test(`[${c.item} disabled] ${c.name}`, async ({ page, api }) => {
         await open(page, api, { query: c.query }); // 全 52 件 = 3 ページ
-        if (c.enabled) await expect(ui(page)[c.key]).toBeEnabled();
-        else await expect(ui(page)[c.key]).toBeDisabled();
+        if (c.disabled) await expect(ui(page)[c.key]).toBeDisabled();
+        else await expect(ui(page)[c.key]).toBeEnabled();
       });
     }
 
-    test('[「次へ」ボタン 活性条件] page が総ページ数より大きい（3 ページ中の 99 ページ目）なら非活性', async ({ page, api }) => {
+    test('[「次へ」ボタン disabled] page が総ページ数より大きい（3 ページ中の 99 ページ目）なら非活性にする', async ({ page, api }) => {
       await open(page, api, { list: outOfRangeList, query: '?page=99' });
       await expect(ui(page).next).toBeDisabled();
     });
 
-    // 活性条件の page は、URL クエリではなく GET /events の応答の page。
+    // disabled の条件の page は、URL クエリではなく GET /events の応答の page。
     // 応答の page が URL クエリの page と違う、モックで作った状態で確かめる（実際の API は、リクエストの page をそのまま返す）
     const responsePageCases = [
-      { item: '「前へ」ボタン', key: 'prev' as const, name: 'URL クエリの page が 3 でも、応答の page が 1 なら非活性', query: '?page=3', responsePage: 1 },
-      { item: '「次へ」ボタン', key: 'next' as const, name: 'URL クエリの page が 1 でも、応答の page が総ページ数と同じ 3 なら非活性', query: '?page=1', responsePage: 3 },
+      { item: '「前へ」ボタン', key: 'prev' as const, name: 'URL クエリの page が 3 でも、応答の page が 1 なら非活性にする', query: '?page=3', responsePage: 1 },
+      { item: '「次へ」ボタン', key: 'next' as const, name: 'URL クエリの page が 1 でも、応答の page が総ページ数と同じ 3 なら非活性にする', query: '?page=1', responsePage: 3 },
     ];
     for (const c of responsePageCases) {
-      test(`[${c.item} 活性条件（応答の page）] ${c.name}`, async ({ page, api }) => {
+      test(`[${c.item} disabled（応答の page）] ${c.name}`, async ({ page, api }) => {
         mockInitial(api);
         api.on('GET /events', { status: 200, body: { ...defaultList, page: c.responsePage } }); // 全 52 件 = 3 ページ
         await page.goto(urlOf(c.query));
@@ -1202,6 +1258,11 @@ test.describe('SCR-001 イベント一覧', () => {
       test(`[${c.item} 表示内容] 列の見出しの「${c.label}」を表示する`, async ({ page, api }) => {
         await open(page, api);
         await expect(ui(page).columnHeader(c.label)).toBeVisible();
+      });
+
+      test(`[${c.item} scope] 列の見出しの「${c.label}」の scope は col になっている`, async ({ page, api }) => {
+        await open(page, api);
+        await expect(ui(page).columnHeader(c.label)).toHaveAttribute('scope', 'col');
       });
     }
 

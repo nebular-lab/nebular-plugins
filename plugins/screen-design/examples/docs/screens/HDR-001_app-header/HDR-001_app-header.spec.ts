@@ -11,11 +11,14 @@
  * テスト名の先頭の [...] は、設計書のどこから作ったケースかを、項目名と列名で示す。
  *   [画面名 表示内容]        … 画面項目「画面名」の表示内容
  *   [メニュー 読み上げ名]    … 画面項目「メニュー」の備考の読み上げ名
+ *   [メニュー type]          … 画面項目「メニュー」の type の列
  *
  * 実装についての前提:
  * - API はブラウザから fetch か XHR で呼ぶ（すべてモックし、バックエンドとは通信しない）
  * - ヘッダーは、ヘッダーの役割（banner）で見つかる。中の部品は、役割と名前で見つかる
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない
+ * - 設計書の画面項目に書かれた属性（type）は、書かれた値になっていることを確かめる
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない
+ * - ユーザーのアイコンは飾り（alt=""）で、役割と名前では探せないので、手動テスト（HDR-001_app-header.manual-test.md）で確かめる
  */
 import type { Page } from '@playwright/test';
 import { test, expect, type ApiMock } from '../api-mock';
@@ -71,6 +74,11 @@ test.describe('HDR-001 ログイン後のヘッダー', () => {
     test('[メニュー 読み上げ名] 文言のないアイコンだけのボタンは、「メニューを開く」という名前で見つかる', async ({ page, api }) => {
       await open(page, api);
       await expect(ui(page).menu).toBeVisible();
+    });
+
+    test('[メニュー type] メニューのボタンの type は「button」', async ({ page, api }) => {
+      await open(page, api);
+      await expect(ui(page).menu).toHaveAttribute('type', 'button');
     });
 
     test('[ユーザー名 表示内容 / ユーザー名 表示条件] GET /me が 200 を返すと、name を表示する', async ({ page, api }) => {

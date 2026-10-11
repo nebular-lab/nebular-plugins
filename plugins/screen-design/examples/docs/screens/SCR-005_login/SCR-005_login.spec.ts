@@ -13,16 +13,19 @@
  *   [メールアドレス 必須]                               … バリデーションのチェック表の、メールアドレスの「必須」の行
  *   [クエリパラメータ redirect 省略]                    … 2. クエリパラメータ の redirect を省略したとき
  *   [パスワード 備考]                                   … 画面項目「パスワード」の備考
- *   [Enter キーで動くボタン]                            … 冒頭の表の「Enter キーで動くボタン」
+ *   [「ログイン」ボタン type]                           … 画面項目「「ログイン」ボタン」の type の列（submit のボタンは、入力欄で Enter キーを押すと動く）
+ *   [メールアドレス autocomplete]                       … 画面項目「メールアドレス」の autocomplete の列（value、placeholder、disabled も同じ形）
  *   [閲覧権限 admin]                                    … 3. 閲覧権限 の admin の行
  *   [共通ルール 送信時に前後の空白を取り除くか]         … 共通ルールの「入力」の行
  * 2 つの出典に当たるケースは「/」で併記している。メッセージは文言をそのまま書いている。
  *
  * 実装についての前提:
  * - API はブラウザから fetch か XHR で呼ぶ（すべてモックし、バックエンドとは通信しない）
- * - 入力欄はラベルと関連付けられている
+ * - 入力欄はラベルと関連付けられている（入力欄をラベルで探すので、見出しの for は、どのテストでも確かめていることになる）
  * - 見出しは heading のロールを持つ
- * - 特定の属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
+ * - 設計書の画面項目に書かれた属性（type、placeholder、autocomplete）は、書かれた値になっていることを確かめる。
+ *   「ログイン」ボタンの type だけは、属性を書かなくても submit になるので、属性の文字列ではなく、要素の type の値で確かめる
+ * - 設計書に書かれていない属性（role、aria-*、data-*）やライブラリ固有の DOM の形は前提にしない。アクセシビリティは、名前・説明・フォーカスの位置・キー操作の結果で確かめる
  * - メッセージは画面上のテキストとして 1 か所に表示される
  * - バリデーションのエラーは、ブラウザ標準の吹き出しではなく、設計書のメッセージで表示する
  * - 共通ヘッダー（ログイン前のヘッダー）の中身は、ここでは確かめない（ヘッダーの設計書から別に確かめる）
@@ -528,7 +531,7 @@ test.describe('SCR-005 ログイン', () => {
       { item: 'パスワード', part: 'password' as const },
     ];
     for (const c of enterCases) {
-      test(`[Enter キーで動くボタン] ${c.item}にフォーカスがあるときに Enter キーを押すと、「ログイン」を押したときと同じ POST /login を呼ぶ`, async ({ page, api }) => {
+      test(`[「ログイン」ボタン type] ${c.item}にフォーカスがあるときに Enter キーを押すと、type が submit の「ログイン」を押したときと同じ POST /login を呼ぶ`, async ({ page, api }) => {
         await open(page, api);
         const post = api.on('POST /login', unauthorized); // 画面に残る 401 を返す
         await fillValid(page);
@@ -538,7 +541,7 @@ test.describe('SCR-005 ログイン', () => {
       });
     }
 
-    test('[Enter キーで動くボタン / 「ログイン」ボタンが非活性のとき] 応答を待つ間（「ログイン」ボタンが非活性）に Enter キーを押しても、何も起きない（POST /login をもう一度呼ばない）', async ({ page, api }) => {
+    test('[「ログイン」ボタン type / 「ログイン」ボタンが非活性のとき] 応答を待つ間（「ログイン」ボタンが非活性）に Enter キーを押しても、何も起きない（POST /login をもう一度呼ばない）', async ({ page, api }) => {
       await open(page, api);
       const reply = deferred<MockReply>();
       const post = api.on('POST /login', () => reply.promise);
@@ -561,19 +564,34 @@ test.describe('SCR-005 ログイン', () => {
       await expect(u.passwordLabel).toBeVisible();
     });
 
-    test('[入力項目 初期値] メールアドレスとパスワードは、どちらも空', async ({ page, api }) => {
+    test('[メールアドレス value / パスワード value] 開いた直後のメールアドレスとパスワードは、どちらも空', async ({ page, api }) => {
       await open(page, api);
       await expect(ui(page).email).toHaveValue('');
       await expect(ui(page).password).toHaveValue('');
     });
 
-    test('[メールアドレス プレースホルダー] 「例: taro@example.com」を表示する', async ({ page, api }) => {
+    // 値が「-」の属性（パスワードの placeholder、maxlength、inputmode など）は、ケースにしない
+    const attributeCases = [
+      { item: 'メールアドレス', part: 'email' as const, attr: 'type', value: 'email' },
+      { item: 'メールアドレス', part: 'email' as const, attr: 'placeholder', value: '例: taro@example.com' },
+      { item: 'メールアドレス', part: 'email' as const, attr: 'autocomplete', value: 'username' },
+      { item: 'パスワード', part: 'password' as const, attr: 'type', value: 'password' },
+      { item: 'パスワード', part: 'password' as const, attr: 'autocomplete', value: 'current-password' },
+    ];
+    for (const c of attributeCases) {
+      test(`[${c.item} ${c.attr}] ${c.item}の ${c.attr} は「${c.value}」`, async ({ page, api }) => {
+        await open(page, api);
+        await expect(ui(page)[c.part]).toHaveAttribute(c.attr, c.value);
+      });
+    }
+
+    test('[「ログイン」ボタン type] 「ログイン」ボタンの type は「submit」', async ({ page, api }) => {
       await open(page, api);
-      await expect(ui(page).email).toHaveAttribute('placeholder', '例: taro@example.com');
+      await expect(ui(page).login).toHaveAttribute('type', 'submit');
     });
 
     // 「ログイン」ボタンが応答を待つ間だけ非活性になり、そのあと解除されることは、[「ログイン」ボタン押下 / 送信中] で確かめている
-    test('[メールアドレス 活性条件 / パスワード 活性条件 / 「ログイン」ボタン 活性条件] 何も入力していなくても、メールアドレス・パスワード・「ログイン」ボタンは活性', async ({ page, api }) => {
+    test('[メールアドレス disabled / パスワード disabled / 「ログイン」ボタン disabled] 何も入力していなくても、メールアドレス・パスワード・「ログイン」ボタンは非活性にしない', async ({ page, api }) => {
       await open(page, api);
       const u = ui(page);
       await expect(u.email).toBeEnabled();
