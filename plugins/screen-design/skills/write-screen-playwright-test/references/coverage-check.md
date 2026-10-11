@@ -14,7 +14,7 @@
 
 - 画面設計書: {SCR-NNN_<slug>/SCR-NNN_<slug>.md の絶対パス}
 - ワイヤーフレーム: {SCR-NNN_<slug>/SCR-NNN_<slug>.html の絶対パス}
-- メッセージ一覧・共通ルール: {messages.md、common-rules.md の絶対パス}
+- メッセージ一覧・共通ルール・ブラウザストレージ一覧: {messages.md、common-rules.md、あれば storage.md の絶対パス}
 - OpenAPI 定義: {パス。なければ「なし」}
 - テストコード: {SCR-NNN_<slug>/SCR-NNN_<slug>.spec.ts の絶対パス}
 - テストケースの作り方: {write-screen-playwright-test/references/test-case-rules.md の絶対パス}

@@ -44,6 +44,7 @@ Claude Code で次を実行する。
 | 画面設計書の内容（処理、バリデーション、条件、メッセージ） | `/write-screen-playwright-test` |
 | 共通ルール | 食い違う画面の `/write-screen-spec` → `/write-screen-playwright-test` |
 | メッセージ一覧の文言 | そのメッセージを使っている画面の `/write-screen-playwright-test` |
+| ブラウザストレージ一覧（キー、値の形式） | その項目を使っている画面の `/write-screen-playwright-test` |
 
 ### 作られるファイル
 
@@ -53,6 +54,7 @@ Claude Code で次を実行する。
 | --- | --- |
 | `overview.md` | 概要。ファイルの説明と、画面一覧 |
 | `messages.md` | メッセージ一覧（全画面で共通） |
+| `storage.md` | ブラウザストレージ一覧（ブラウザに保存する値のキーと形式。使う画面があるときだけ） |
 | `common-rules.md` | 共通ルール（全画面で同じになる扱い） |
 | `screen-flow.drawio` | 画面遷移図 |
 | `wireframe.css` | ワイヤーフレームの共通スタイル |

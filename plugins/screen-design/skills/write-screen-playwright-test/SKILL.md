@@ -18,7 +18,7 @@ disable-model-invocation: true
 
 ## 手順
 
-1. **入力を集める**: 対象の画面の設計書とワイヤーフレーム、`messages.md`、`common-rules.md`、OpenAPI 定義（`overview.md` の冒頭の表から探す）を読む。規則と、サンプルのテストコードを 1 つ読む。
+1. **入力を集める**: 対象の画面の設計書とワイヤーフレーム、`messages.md`、`common-rules.md`、あれば `storage.md`、OpenAPI 定義（`overview.md` の冒頭の表から探す）を読む。規則と、サンプルのテストコードを 1 つ読む。
 2. **Playwright の環境を確かめる**
    - `playwright.config.*` から、テストを探す場所と画面のベース URL を確かめる。設定がなければ、導入するかをユーザーに確認する（勝手にインストールしない）。
    - この画面が対象外（規則の「前提」）でないかを確かめる。
