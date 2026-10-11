@@ -252,8 +252,6 @@ test.describe('SCR-003 イベント詳細', () => {
       });
     }
 
-    test.fixme('[初期表示 / 読み込み中] 取得が終わるまで、内容の代わりに読み込み中の表示を出し、終わったら消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
-
     test('[初期表示 / 読み込み中] 取得が終わるまで、見出しも「編集」「削除」ボタンも表示しない', async ({ page, api }) => {
       mockInitial(api);
       const reply = deferred<{ status: number; body: unknown }>();
@@ -533,10 +531,6 @@ test.describe('SCR-003 イベント詳細', () => {
       await expect(ui(page).edit.click({ timeout: 1000 })).rejects.toThrow();
       await expect(page).toHaveURL(new RegExp(`${pathOf(draftEvent)}$`));
     });
-
-    test.fixme('[共通ルール アクセシビリティ / 画面上部のエラーの通知] 画面上部のエラー表示を表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
-
-    test.fixme('[共通ルール アクセシビリティ / トーストの通知] トーストを表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
 
     test('[共通ルール アクセシビリティ / 確認ダイアログを開いたとき / 削除の確認] 削除の確認を開くと、最初のボタンの「キャンセル」にフォーカスを移す', async ({ page, api }) => {
       await open(page, api, draftEvent);

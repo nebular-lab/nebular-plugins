@@ -608,8 +608,6 @@ test.describe('SCR-005 ログイン', () => {
       });
     }
 
-    test.fixme('[共通ルール アクセシビリティ / 画面上部のエラーの通知] 画面上部のエラー表示を表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
-
     const submitFocusCases = [
       { cond: 'メールアドレスとパスワードが空', item: 'メールアドレス', part: 'email' as const, setup: async (_page: Page) => {} },
       { cond: 'パスワードだけが空', item: 'パスワード', part: 'password' as const, setup: (page: Page) => ui(page).email.fill(EMAIL) },

@@ -308,8 +308,6 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(u.tab('下書き')).toBeHidden(); // 一覧を表示していないので、「下書き」の文言はタブにしか出ない
     });
 
-    test.fixme('[初期表示 / GET /me 上記以外（タブの選択）] GET /me で定義にないステータスが返って終了したとき、URL クエリに status が付いていても「すべて」のタブを選んだ状態にする（選択状態の目印が設計書にないため。特定の属性を前提にせずには確かめられない）', async () => {});
-
     // URL クエリ keyword をキーワードに入れるのは GET /me より前なので、GET /me が失敗して終了しても入っている
     test('[初期表示 / GET /me 上記以外（キーワードの値）] GET /me で定義にないステータスが返って終了しても、キーワードには URL クエリ keyword の値（前後の空白は除く）が入っている', async ({ page, api }) => {
       mockInitial(api);
@@ -376,8 +374,6 @@ test.describe('SCR-001 イベント一覧', () => {
         await o.expect(page);
       });
     }
-
-    test.fixme('[初期表示 / 読み込み中 / 読み込み中の表示 表示条件] GET /events の応答を待っている間、一覧の位置に読み込み中の表示（スピナー）を出し、応答が返ったら消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
 
     test('[初期表示 / 読み込み中] GET /events の応答が返るまで、イベントの表・ページ送り・データなしの表示・読み込みのエラーを表示せず、返ったら表を表示する', async ({ page, api }) => {
       mockInitial(api);
@@ -671,8 +667,6 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(page).toHaveURL(hasQuery({ status: null, page: '2' }));
     });
 
-    test.fixme('[初期表示 / タブの選択] URL クエリ status に対応するタブを選択状態にする（選択状態の目印が設計書にないため。特定の属性を前提にせずには確かめられない。送る status は [クエリパラメータ status] で確かめている）', async () => {});
-
     test('[「検索」ボタン押下 / URL クエリの書き換え] 「検索」を押すと、URL クエリの keyword をキーワードの入力値に、page を 1 に書き換える', async ({ page, api }) => {
       await open(page, api, { query: '?page=3' });
       const u = ui(page);
@@ -720,8 +714,6 @@ test.describe('SCR-001 イベント一覧', () => {
       await page.goBack();
       await expect(page).toHaveURL(hasQuery({ keyword: null, page: '3' }));
     });
-
-    test.fixme('[タブの切り替え / タブの選択] 選んだタブを選択状態にする（選択状態の目印が設計書にないため。特定の属性を前提にせずには確かめられない。送る status は [タブの切り替え / GET /events リクエスト] で確かめている）', async () => {});
 
     test('[タブの切り替え / URL クエリの書き換え] 「公開中」のタブを選ぶと、URL クエリの status を published に、page を 1 に書き換える', async ({ page, api }) => {
       await open(page, api, { query: '?page=3' });
@@ -1318,8 +1310,6 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(u.keyword).toHaveAccessibleDescription(containing(M.MSG004('キーワード', 50)));
     });
 
-    test.fixme('[共通ルール アクセシビリティ / 入力項目に結び付かないエラー表示の通知] 画面上部のエラー・読み込みのエラーを表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
-
     test('[共通ルール アクセシビリティ / 送信時のエラーでのフォーカス / 「検索」ボタン] エラーがあるまま「検索」を押すと、最初のエラー項目のキーワードにフォーカスを移す', async ({ page, api }) => {
       await open(page, api);
       const u = ui(page);
@@ -1328,8 +1318,6 @@ test.describe('SCR-001 イベント一覧', () => {
       await expect(page.getByText(M.MSG004('キーワード', 50))).toBeVisible();
       await expect(u.keyword).toBeFocused();
     });
-
-    test.fixme('[共通ルール アクセシビリティ / 一覧を取り直したときの通知] 検索・タブの切り替え・ページ送りで一覧を取り直したとき、結果（件数、または 0 件のときの文言）を読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
 
     test('[共通ルール アクセシビリティ / Tab キーの順序] キーワードから Tab キーを押すと、「検索」ボタン、ステータスのタブの順にフォーカスが移る', async ({ page, api }) => {
       await open(page, api);

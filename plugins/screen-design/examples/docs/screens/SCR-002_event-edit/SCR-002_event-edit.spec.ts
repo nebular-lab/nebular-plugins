@@ -411,8 +411,6 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test.fixme('[初期表示 / 読み込み中] 取得が終わるまで、フォームの代わりにスピナーを表示し、終わったら消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
-
     test('[初期表示 / 読み込み中] GET /events/{eventId} の応答が返るまでフォームを表示せず、返ったら表示する', async ({ page, api }) => {
       mockInitial(api);
       const reply = deferred<{ status: number; body: unknown }>();
@@ -537,8 +535,6 @@ test.describe('SCR-002 イベント編集', () => {
       await expect(u.publish).toBeEnabled();
       await expect(u.del).toBeEnabled();
     });
-
-    test.fixme('[「下書き保存」ボタン押下 / 保存中の表示] 保存中は「下書き保存」ボタンの中にスピナーを表示し、応答後に消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
 
     test(`[「下書き保存」ボタン押下 / 画面上部のエラーの消去] ${q(M.MSG018)}を表示したあと、もう一度保存すると画面上部のエラー表示を消す`, async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
@@ -972,8 +968,6 @@ test.describe('SCR-002 イベント編集', () => {
       });
     }
 
-    test.fixme(`[定員 1〜999] 1000 を入力すると ${q(M.MSG009('定員', 1, 999))}を表示する（入力可能最大文字数が 3 で、4 桁を入力できないため確かめられない）`, async () => {});
-
     test(`[定員 優先順位] 「1〜999」と「参加者数以上」に同時に違反すると、上の行の ${q(M.MSG009('定員', 1, 999))}だけを表示する`, async ({ page, api }) => {
       await openEdit(page, api, publishedEvent);
       await ui(page).capacity.fill('0'); // 範囲外、かつ参加者数（18）より小さい
@@ -1011,10 +1005,6 @@ test.describe('SCR-002 イベント編集', () => {
       await ui(page).capacity.pressSequentially('１２');
       await expect(ui(page).capacity).toHaveValue('12');
     });
-
-    test.fixme('[定員 入力できる範囲（共通ルール: IME の変換中）] 変換を確定するまでは入力の制限を行わない（Playwright で IME の変換中を再現しにくいため）', async () => {});
-
-    test.fixme('[定員 バリデーション（共通ルール: IME の変換中）] 変換を確定するまではバリデーションを行わない（Playwright で IME の変換中を再現しにくいため）', async () => {});
 
     test('[定員 入力可能最大文字数（共通ルール: 貼り付け）] 4 桁以上をまとめて入力すると、3 桁で切り詰める', async ({ page, api }) => {
       await openEdit(page, api, draftEvent);
@@ -1274,10 +1264,6 @@ test.describe('SCR-002 イベント編集', () => {
       // どの属性で結び付けているかは見ない。読み上げソフトに伝わる「説明」にエラーの文言が入っていることを確かめる
       await expect(ui(page).title).toHaveAccessibleDescription(containing(M.MSG003('タイトル', 2)));
     });
-
-    test.fixme('[共通ルール アクセシビリティ / 画面上部のエラーの通知] 画面上部のエラー表示を表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
-
-    test.fixme('[共通ルール アクセシビリティ / トーストの通知] トーストを表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
 
     const submitFocusCases = [
       { name: '下書き保存', button: 'draft' as const },

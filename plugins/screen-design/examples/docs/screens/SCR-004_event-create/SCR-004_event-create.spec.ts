@@ -305,8 +305,6 @@ test.describe('SCR-004 イベント作成', () => {
       });
     }
 
-    test.fixme('[初期表示 / 読み込み中] 取得が終わるまで、フォームの代わりにスピナーを表示し、終わったら消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
-
     test('[初期表示 / 読み込み中] GET /categories の応答が返るまでフォームを表示せず、返ったら表示する', async ({ page, api }) => {
       mockInitial(api);
       const reply = deferred<MockReply>();
@@ -433,8 +431,6 @@ test.describe('SCR-004 イベント作成', () => {
       await expect(u.draft).toBeEnabled();
       await expect(u.publish).toBeEnabled();
     });
-
-    test.fixme('[「下書き保存」ボタン押下 / 保存中の表示] 保存中は「下書き保存」ボタンの中にスピナーを表示し、応答後に消す（スピナーの目印が設計書・ワイヤーフレームにないため）', async () => {});
 
     test(`[「下書き保存」ボタン押下 / 画面上部のエラーの消去] ${q(M.MSG022)}を表示したあと、もう一度保存すると画面上部のエラー表示を消す`, async ({ page, api }) => {
       await open(page, api);
@@ -738,8 +734,6 @@ test.describe('SCR-004 イベント作成', () => {
       });
     }
 
-    test.fixme(`[定員 1〜999] 定員に 1000 を入力すると、${q(M.MSG009('定員', 1, 999))}を表示する（入力可能最大文字数が 3 で、4 桁を入力できないため確かめられない）`, async () => {});
-
     test('[定員 エラーの消去] エラーのあと正しい値を入力すると、定員のエラー表示を非表示にする', async ({ page, api }) => {
       await open(page, api);
       const u = ui(page);
@@ -781,10 +775,6 @@ test.describe('SCR-004 イベント作成', () => {
       await page.keyboard.insertText('1a2');
       await expect(ui(page).capacity).toHaveValue('12');
     });
-
-    test.fixme('[共通ルール 日本語入力（IME）の変換を確定する前の文字 / 定員] 変換を確定するまでは、定員の入力の制限を行わない（Playwright で IME の変換中を再現しにくいため）', async () => {});
-
-    test.fixme('[共通ルール 日本語入力（IME）の変換を確定する前の文字 / 定員] 変換を確定するまでは、定員のバリデーションを行わない（Playwright で IME の変換中を再現しにくいため）', async () => {});
 
     // ---- 「下書き保存」ボタン押下のチェック表 ----
     // 必須項目を正しく埋めてから 1 項目だけ崩し、「下書き保存」を押す。
@@ -1120,10 +1110,6 @@ test.describe('SCR-004 イベント作成', () => {
       // どの属性で結び付けているかは見ない。読み上げソフトに伝わる「説明」にエラーの文言が入っていることを確かめる
       await expect(ui(page).title).toHaveAccessibleDescription(containing(M.MSG003('タイトル', 2)));
     });
-
-    test.fixme('[共通ルール アクセシビリティ / 画面上部のエラーの通知] 画面上部のエラー表示を表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
-
-    test.fixme('[共通ルール アクセシビリティ / トーストの通知] トーストを表示したとき、読み上げで通知する（通知のしかたは実装によって違うため、読み上げソフトで手で確かめる）', async () => {});
 
     const submitFocusCases = [
       { name: '下書き保存', button: 'draft' as const },
